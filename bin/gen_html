@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+import argparse
+
+from html_template_parser import *
+
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='Generates HTML from template and CSV file', formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument('-c', '--csv', type=str, metavar='PATH', required=True, help='indicates path where CSV file, containing model, is located')
+    parser.add_argument('-t', '--template', type=str, metavar='PATH', required=True, help='indicates path where template file is located')
+    parser.add_argument('-o', '--output', type=str, metavar='PATH', default='output.html', help='indicates output file (default output.html)')
+    args = parser.parse_args()
+    return args
+
+
+def main():
+    args = parse_arguments()
+    parser = Parser()
+    try:
+        output = parser.parse(args.csv, args.template)
+        with open(args.output, 'w') as file:
+            file.write(output)
+    except ParserException as exc:
+        print(exc)
+
+
+if __name__ == '__main__':
+    main()

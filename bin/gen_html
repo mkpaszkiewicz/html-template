@@ -18,11 +18,11 @@ def main():
     parser = Parser()
     try:
         output = parser.parse(args.csv, args.template)
-        with open(args.output, 'w') as file:
-            file.write(output)
     except ParserException as exc:
         print(exc)
-
+    else:
+        with open(args.output, 'w') as file:
+            file.write(output)
 
 if __name__ == '__main__':
     main()

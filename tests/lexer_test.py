@@ -97,6 +97,17 @@ class TokenizerTest(unittest.TestCase):
             self.assertEqual(expected.content, generated.content)
         input_stream.close()
 
+    def test_should_return_error_unclosed_string(self):
+        input_stream = io.StringIO('<span>{{"}}</span>')
+        source_controller = SourceController(input_stream)
+        tokenizer = Tokenizer(source_controller)
+        tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.STATEMENT_OPEN, '{{'), Token(Lexem.ERROR, 'Unclosed string')]
+
+        for expected, generated in itertools.zip_longest(tokens, list(tokenizer.get_tokens())):
+            self.assertEqual(expected.id, generated.id)
+            self.assertEqual(expected.content, generated.content)
+        input_stream.close()
+
     def test_should_return_number_tokens(self):
         input_stream = io.StringIO('<span>{{123}}{{12.3}}</span>')
         source_controller = SourceController(input_stream)
@@ -144,6 +155,23 @@ class TokenizerTest(unittest.TestCase):
                   Token(Lexem.WHITESPACE, ' '), Token(Lexem.TEMPLATE_CLOSE, '%}'), Token(Lexem.HTML, 'Hello World'),
                   Token(Lexem.TEMPLATE_OPEN, '{%'), Token(Lexem.WHITESPACE, ' '), Token(Lexem.ENDIF, 'endif'),
                   Token(Lexem.WHITESPACE, ' '), Token(Lexem.TEMPLATE_CLOSE, '%}'), Token(Lexem.HTML, '</span>')]
+
+        for expected, generated in itertools.zip_longest(tokens, list(tokenizer.get_tokens())):
+            self.assertEqual(expected.id, generated.id)
+            self.assertEqual(expected.content, generated.content)
+        input_stream.close()
+
+    def test_should_return_expression_tokens(self):
+        input_stream = io.StringIO('<span>{% set var = (2+4%3) %}</span>')
+        source_controller = SourceController(input_stream)
+        tokenizer = Tokenizer(source_controller)
+        tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.TEMPLATE_OPEN, '{%'), Token(Lexem.WHITESPACE, ' '),
+                  Token(Lexem.SET, 'set'), Token(Lexem.WHITESPACE, ' '), Token(Lexem.IDENTIFIER, 'var'),
+                  Token(Lexem.WHITESPACE, ' '), Token(Lexem.ASSIGN, '='), Token(Lexem.WHITESPACE, ' '),
+                  Token(Lexem.LEFT_BRACKET, '('), Token(Lexem.NUMBER, '2'), Token(Lexem.PLUS, '+'),
+                  Token(Lexem.NUMBER, '4'), Token(Lexem.MOD, '%'), Token(Lexem.NUMBER, '3'),
+                  Token(Lexem.RIGHT_BRACKET, ')'), Token(Lexem.WHITESPACE, ' '), Token(Lexem.TEMPLATE_CLOSE, '%}'),
+                  Token(Lexem.HTML, '</span>')]
 
         for expected, generated in itertools.zip_longest(tokens, list(tokenizer.get_tokens())):
             self.assertEqual(expected.id, generated.id)

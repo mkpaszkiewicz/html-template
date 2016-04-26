@@ -12,8 +12,9 @@ class Token:
 
 
 class Tokenizer:
+    """Class generates tokens based on source_controller input stream."""
+
     def __init__(self, source_controller):
-        """Class generates tokens based on source_controller input stream."""
         self._source_controller = source_controller
         self._is_template = False
         self._is_comment = False
@@ -87,7 +88,7 @@ class Tokenizer:
                 self._template_end_token_id = None
             return Token(symbols[content], content)
         elif content[0] == '%':
-            self._read_source = content[0] + self._read_source
+            self._read_source = content[1:] + self._read_source
             return Token(symbols[content[0]], content[0])
         else:
             return Token(Lexem.ERROR, 'Unrecognised construction: {}'.format(content))
@@ -101,7 +102,7 @@ class Tokenizer:
             self._read_source = number[-1:] + self._read_source
             return Token(Lexem.NUMBER, number[:-1])
         else:
-            return Token(Lexem.HTML, number)
+            return Token(Lexem.NUMBER, number)
 
     def _get_string_token(self, quotation):
         char = self._get_next_char()
@@ -153,7 +154,7 @@ class SourceController:
         self._input = input_stream
 
     def get_char(self):
-        """Returns character from source and None if end of file"""
+        """Returns character from source and None if end of file."""
         if not self.has_char():
             return ''
         result = self.buffer[self.position_number]
@@ -161,7 +162,7 @@ class SourceController:
         return result
 
     def has_char(self):
-        """Returns True whether there is text to read"""
+        """Returns True whether there is text to read."""
         return bool(not self._is_empty_buffer() or self._next_line())
 
     def _next_line(self):

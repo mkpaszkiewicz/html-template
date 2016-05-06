@@ -63,7 +63,9 @@ class Tokenizer:
             self._read_source = content[-2:] + self._read_source
             self._is_template = True
             self._template_end_token_id = symbols[content[-2:]] + 1
-            return Token(Lexem.HTML, content[:-2])
+            content = content[:-2]
+        if content is '':
+            return self._get_template_token()
         else:
             return Token(Lexem.HTML, content)
 
@@ -79,7 +81,7 @@ class Tokenizer:
             return self._get_string_token(content)
         elif content.isalpha():
             return self._get_keyword_or_identifier_token(content)
-        elif content in symbols and content != '%':
+        elif content in symbols and content not in ['%', '=', '<', '>']:
             return Token(symbols[content])
 
         content += self._get_next_char()
@@ -90,7 +92,7 @@ class Tokenizer:
                 self._is_template = False
                 self._template_end_token_id = None
             return Token(symbols[content])
-        elif content[0] == '%':
+        elif content[0] in ['%', '=', '<', '>']:
             self._read_source = content[1:] + self._read_source
             return Token(symbols[content[0]])
         else:
@@ -123,8 +125,11 @@ class Tokenizer:
         while not self.is_end() and (char.isdigit() or char.isalpha()):
             string += char
             char = self._get_next_char()
-        if not (char.isdigit() or char.isalpha()):
+        if char.isdigit() or char.isalpha():
+            string += char
+        else:
             self._read_source = char + self._read_source
+
         if string in keywords:
             return Token(keywords[string])
         else:

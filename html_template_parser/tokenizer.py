@@ -6,9 +6,12 @@ def is_number(str):
 
 
 class Token:
-    def __init__(self, id, content=''):
+    def __init__(self, id, content=None):
         self.id = id
         self.content = content
+
+    def __eq__(self, other):
+        return self.id == other.id and self.content == other.content
 
 
 class Tokenizer:
@@ -77,7 +80,7 @@ class Tokenizer:
         elif content.isalpha():
             return self._get_keyword_or_identifier_token(content)
         elif content in symbols and content != '%':
-            return Token(symbols[content], content)
+            return Token(symbols[content])
 
         content += self._get_next_char()
         if content in symbols:
@@ -86,10 +89,10 @@ class Tokenizer:
             elif symbols[content] == self._template_end_token_id:
                 self._is_template = False
                 self._template_end_token_id = None
-            return Token(symbols[content], content)
+            return Token(symbols[content])
         elif content[0] == '%':
             self._read_source = content[1:] + self._read_source
-            return Token(symbols[content[0]], content[0])
+            return Token(symbols[content[0]])
         else:
             return Token(Lexem.ERROR, 'Unrecognised construction: {}'.format(content))
 
@@ -100,9 +103,8 @@ class Tokenizer:
 
         if not is_number(number):
             self._read_source = number[-1:] + self._read_source
-            return Token(Lexem.NUMBER, number[:-1])
-        else:
-            return Token(Lexem.NUMBER, number)
+            number = number[:-1]
+        return Token(Lexem.NUMBER, float(number))
 
     def _get_string_token(self, quotation):
         char = self._get_next_char()
@@ -124,7 +126,7 @@ class Tokenizer:
         if not (char.isdigit() or char.isalpha()):
             self._read_source = char + self._read_source
         if string in keywords:
-            return Token(keywords[string], string)
+            return Token(keywords[string])
         else:
             return Token(Lexem.IDENTIFIER, string)
 
@@ -140,7 +142,7 @@ class Tokenizer:
             return Token(Lexem.COMMENT, comment)
 
     def _is_template_opener_in(self, source):
-        return any(x in source for x in ['{%', '{{', '{#'])
+        return source[-2:] in ['{%', '{{', '{#']
 
 
 class SourceController:

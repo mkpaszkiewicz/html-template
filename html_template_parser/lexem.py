@@ -54,7 +54,10 @@ class Lexem(enum.IntEnum):
 
     COMMENT = 42
     HTML = 43
-    WHITESPACE = 44
+
+    SPACE = 44
+    NEW_LINE = 44
+    TAB = 44
 
 
 keywords = {
@@ -103,7 +106,7 @@ symbols = {
     '{#': Lexem.COMMENT_OPEN,
     '#}': Lexem.COMMENT_CLOSE,
 
-    ' ': Lexem.WHITESPACE,
-    '\n': Lexem.WHITESPACE,
-    '\t': Lexem.WHITESPACE
+    ' ': Lexem.SPACE,
+    '\n': Lexem.NEW_LINE,
+    '\t': Lexem.TAB
 }

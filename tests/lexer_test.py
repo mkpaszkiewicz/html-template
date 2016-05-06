@@ -1,7 +1,7 @@
 import io
 import itertools
 import unittest
-
+from contextlib import closing
 from html_template_parser import SourceController, Tokenizer, Lexem, Token
 
 
@@ -61,122 +61,107 @@ class TokenizerTest(unittest.TestCase):
         input_stream.close()
 
     def test_should_return_single_html_token(self):
-        input_stream = io.StringIO('<span>Hello World</span>')
-        source_controller = SourceController(input_stream)
-        tokenizer = Tokenizer(source_controller)
-        tokens = [Token(Lexem.HTML, '<span>Hello World</span>')]
+        with closing(io.StringIO('<span>Hello World</span>')) as input_stream:
+            source_controller = SourceController(input_stream)
+            tokenizer = Tokenizer(source_controller)
+            tokens = [Token(Lexem.HTML, '<span>Hello World</span>')]
 
-        for expected, generated in itertools.zip_longest(tokens, list(tokenizer.get_tokens())):
-            self.assertEqual(expected.id, generated.id)
-            self.assertEqual(expected.content, generated.content)
-        input_stream.close()
+            self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_statement_tokens(self):
-        input_stream = io.StringIO('<span>{{}}</span>')
-        source_controller = SourceController(input_stream)
-        tokenizer = Tokenizer(source_controller)
-        tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.STATEMENT_OPEN, '{{'), Token(Lexem.STATEMENT_CLOSE, '}}'),
-                  Token(Lexem.HTML, '</span>')]
+        with closing(io.StringIO('<span>{{}}</span>')) as input_stream:
+            source_controller = SourceController(input_stream)
+            tokenizer = Tokenizer(source_controller)
+            tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.STATEMENT_OPEN), Token(Lexem.STATEMENT_CLOSE),
+                      Token(Lexem.HTML, '</span>')]
 
-        # generated = list(tokenizer.get_tokens()
-        for expected, generated in itertools.zip_longest(tokens, list(tokenizer.get_tokens())):
-            self.assertEqual(expected.id, generated.id)
-            self.assertEqual(expected.content, generated.content)
-        input_stream.close()
+            self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_string_tokens(self):
         input_stream = io.StringIO('<span>{{\'str1{{1+2}}b\'"str2\'/{#%"""\'\'}}</span>')
         source_controller = SourceController(input_stream)
         tokenizer = Tokenizer(source_controller)
-        tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.STATEMENT_OPEN, '{{'), Token(Lexem.STRING, '\'str1{{1+2}}b\''),
+        tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.STATEMENT_OPEN), Token(Lexem.STRING, '\'str1{{1+2}}b\''),
                   Token(Lexem.STRING, '"str2\'/{#%"'), Token(Lexem.STRING, '""'), Token(Lexem.STRING, '\'\''),
-                  Token(Lexem.STATEMENT_CLOSE, '}}'), Token(Lexem.HTML, '</span>')]
+                  Token(Lexem.STATEMENT_CLOSE), Token(Lexem.HTML, '</span>')]
 
-        for expected, generated in itertools.zip_longest(tokens, list(tokenizer.get_tokens())):
-            self.assertEqual(expected.id, generated.id)
-            self.assertEqual(expected.content, generated.content)
+        self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
         input_stream.close()
 
     def test_should_return_error_unclosed_string(self):
         input_stream = io.StringIO('<span>{{"}}</span>')
         source_controller = SourceController(input_stream)
         tokenizer = Tokenizer(source_controller)
-        tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.STATEMENT_OPEN, '{{'), Token(Lexem.ERROR, 'Unclosed string')]
+        tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.STATEMENT_OPEN), Token(Lexem.ERROR, 'Unclosed string')]
 
-        for expected, generated in itertools.zip_longest(tokens, list(tokenizer.get_tokens())):
-            self.assertEqual(expected.id, generated.id)
-            self.assertEqual(expected.content, generated.content)
+        self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
         input_stream.close()
 
     def test_should_return_number_tokens(self):
         input_stream = io.StringIO('<span>{{123}}{{12.3}}</span>')
         source_controller = SourceController(input_stream)
         tokenizer = Tokenizer(source_controller)
-        tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.STATEMENT_OPEN, '{{'), Token(Lexem.NUMBER, '123'),
-                  Token(Lexem.STATEMENT_CLOSE, '}}'), Token(Lexem.HTML, ''), Token(Lexem.STATEMENT_OPEN, '{{'),
-                  Token(Lexem.NUMBER, '12.3'), Token(Lexem.STATEMENT_CLOSE, '}}'), Token(Lexem.HTML, '</span>')]
+        tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.STATEMENT_OPEN), Token(Lexem.NUMBER, 123),
+                  Token(Lexem.STATEMENT_CLOSE), Token(Lexem.HTML, ''), Token(Lexem.STATEMENT_OPEN),
+                  Token(Lexem.NUMBER, 12.3), Token(Lexem.STATEMENT_CLOSE), Token(Lexem.HTML, '</span>')]
 
-        for expected, generated in itertools.zip_longest(tokens, list(tokenizer.get_tokens())):
-            self.assertEqual(expected.id, generated.id)
-            self.assertEqual(expected.content, generated.content)
+        self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
         input_stream.close()
 
     def test_should_return_comment_tokens(self):
         input_stream = io.StringIO('<span>{#Comment {{12.3}}#}</span>')
         source_controller = SourceController(input_stream)
         tokenizer = Tokenizer(source_controller)
-        tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.COMMENT_OPEN, '{#'), Token(Lexem.COMMENT, 'Comment {{12.3}}'),
-                  Token(Lexem.COMMENT_CLOSE, '#}'), Token(Lexem.HTML, '</span>')]
+        tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.COMMENT_OPEN), Token(Lexem.COMMENT, 'Comment {{12.3}}'),
+                  Token(Lexem.COMMENT_CLOSE), Token(Lexem.HTML, '</span>')]
 
-        for expected, generated in itertools.zip_longest(tokens, list(tokenizer.get_tokens())):
-            self.assertEqual(expected.id, generated.id)
-            self.assertEqual(expected.content, generated.content)
+        self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
         input_stream.close()
 
     def test_should_return_whitespace_tokens(self):
         input_stream = io.StringIO('<span>{% \n %}</span>')
         source_controller = SourceController(input_stream)
         tokenizer = Tokenizer(source_controller)
-        tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.TEMPLATE_OPEN, '{%'), Token(Lexem.WHITESPACE, ' '),
-                  Token(Lexem.WHITESPACE, '\n'), Token(Lexem.WHITESPACE, ' '), Token(Lexem.TEMPLATE_CLOSE, '%}'),
+        tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.TEMPLATE_OPEN), Token(Lexem.SPACE),
+                  Token(Lexem.NEW_LINE), Token(Lexem.SPACE), Token(Lexem.TEMPLATE_CLOSE),
                   Token(Lexem.HTML, '</span>')]
 
-        for expected, generated in itertools.zip_longest(tokens, list(tokenizer.get_tokens())):
-            self.assertEqual(expected.id, generated.id)
-            self.assertEqual(expected.content, generated.content)
+        self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
         input_stream.close()
 
     def test_should_return_keyword_and_identifier_tokens(self):
         input_stream = io.StringIO('<span>{% if condition %}Hello World{% endif %}</span>')
         source_controller = SourceController(input_stream)
         tokenizer = Tokenizer(source_controller)
-        tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.TEMPLATE_OPEN, '{%'), Token(Lexem.WHITESPACE, ' '),
-                  Token(Lexem.IF, 'if'), Token(Lexem.WHITESPACE, ' '), Token(Lexem.IDENTIFIER, 'condition'),
-                  Token(Lexem.WHITESPACE, ' '), Token(Lexem.TEMPLATE_CLOSE, '%}'), Token(Lexem.HTML, 'Hello World'),
-                  Token(Lexem.TEMPLATE_OPEN, '{%'), Token(Lexem.WHITESPACE, ' '), Token(Lexem.ENDIF, 'endif'),
-                  Token(Lexem.WHITESPACE, ' '), Token(Lexem.TEMPLATE_CLOSE, '%}'), Token(Lexem.HTML, '</span>')]
+        tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.TEMPLATE_OPEN), Token(Lexem.SPACE),
+                  Token(Lexem.IF), Token(Lexem.SPACE), Token(Lexem.IDENTIFIER, 'condition'),
+                  Token(Lexem.SPACE), Token(Lexem.TEMPLATE_CLOSE), Token(Lexem.HTML, 'Hello World'),
+                  Token(Lexem.TEMPLATE_OPEN), Token(Lexem.SPACE), Token(Lexem.ENDIF),
+                  Token(Lexem.SPACE), Token(Lexem.TEMPLATE_CLOSE), Token(Lexem.HTML, '</span>')]
 
-        for expected, generated in itertools.zip_longest(tokens, list(tokenizer.get_tokens())):
-            self.assertEqual(expected.id, generated.id)
-            self.assertEqual(expected.content, generated.content)
+        self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
         input_stream.close()
 
     def test_should_return_expression_tokens(self):
         input_stream = io.StringIO('<span>{% set var = (2+4%3) %}</span>')
         source_controller = SourceController(input_stream)
         tokenizer = Tokenizer(source_controller)
-        tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.TEMPLATE_OPEN, '{%'), Token(Lexem.WHITESPACE, ' '),
-                  Token(Lexem.SET, 'set'), Token(Lexem.WHITESPACE, ' '), Token(Lexem.IDENTIFIER, 'var'),
-                  Token(Lexem.WHITESPACE, ' '), Token(Lexem.ASSIGN, '='), Token(Lexem.WHITESPACE, ' '),
-                  Token(Lexem.LEFT_BRACKET, '('), Token(Lexem.NUMBER, '2'), Token(Lexem.PLUS, '+'),
-                  Token(Lexem.NUMBER, '4'), Token(Lexem.MOD, '%'), Token(Lexem.NUMBER, '3'),
-                  Token(Lexem.RIGHT_BRACKET, ')'), Token(Lexem.WHITESPACE, ' '), Token(Lexem.TEMPLATE_CLOSE, '%}'),
+        tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.TEMPLATE_OPEN), Token(Lexem.SPACE),
+                  Token(Lexem.SET), Token(Lexem.SPACE), Token(Lexem.IDENTIFIER, 'var'),
+                  Token(Lexem.SPACE), Token(Lexem.ASSIGN), Token(Lexem.SPACE),
+                  Token(Lexem.LEFT_BRACKET), Token(Lexem.NUMBER, 2), Token(Lexem.PLUS),
+                  Token(Lexem.NUMBER, 4), Token(Lexem.MOD), Token(Lexem.NUMBER, 3),
+                  Token(Lexem.RIGHT_BRACKET), Token(Lexem.SPACE), Token(Lexem.TEMPLATE_CLOSE),
                   Token(Lexem.HTML, '</span>')]
 
-        for expected, generated in itertools.zip_longest(tokens, list(tokenizer.get_tokens())):
+        self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
+        input_stream.close()
+
+    def assertTokenListEqual(self, tokens1, tokens2):
+        for expected, generated in itertools.zip_longest(tokens1, tokens2):
             self.assertEqual(expected.id, generated.id)
             self.assertEqual(expected.content, generated.content)
-        input_stream.close()
+
 
 if __name__ == '__main__':
     unittest.main()

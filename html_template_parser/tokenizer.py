@@ -17,9 +17,11 @@ def is_whitespace(token):
 
 
 class Token:
-    def __init__(self, id, content=None):
+    def __init__(self, id, content=None, line=None, position=None):
         self.id = id
         self.content = content
+        self.line = line
+        self.position = position
 
     def __eq__(self, other):
         return self.id == other.id and self.content == other.content
@@ -44,8 +46,11 @@ class Tokenizer:
 
     def get_next_token(self, omit_whitespace=False):
         if self.is_end():
-            token = Token(Lexem.EOI)
-        elif self._is_template:
+            return Token(Lexem.EOI)
+
+        line = self._source_controller.line_number + int(self._source_controller.line_number == 0)
+        position = self._source_controller.position_number - len(self._read_source) + 1
+        if self._is_template:
             token = self._get_template_token()
         else:
             token = self._get_html_token()
@@ -53,6 +58,8 @@ class Tokenizer:
         if omit_whitespace and is_whitespace(token):
             return self.get_next_token(omit_whitespace)
         else:
+            token.line = line
+            token.position = position
             return token
 
     def is_end(self):

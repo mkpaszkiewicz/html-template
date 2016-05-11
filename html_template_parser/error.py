@@ -1,10 +1,12 @@
 __all__ = [
-    'ParserException'
+    'TokenizerException',
+    'UnrecognisedConstruction',
+    'IncompleteToken'
 ]
 
 
-class ParserException(Exception):
-    """Base class for all parser exceptions."""
+class TokenizerException(Exception):
+    """Base class for all tokenizer exceptions."""
 
     def __init__(self, msg=''):
         self.message = msg
@@ -14,3 +16,19 @@ class ParserException(Exception):
         return self.message
 
     __str__ = __repr__
+
+
+class UnrecognisedConstruction(TokenizerException):
+    """Raised when forbidden symbols are met."""
+
+    def __init__(self, line, position, error_msg):
+        msg = '{}:{}: error: {}'.format(line, position, error_msg)
+        TokenizerException.__init__(self, msg)
+
+
+class IncompleteToken(TokenizerException):
+    """Raised when any token is incomplete e.g. unclosed string"""
+
+    def __init__(self, line, position, error_msg):
+        msg = '{}:{}: error: {}'.format(line, position, error_msg)
+        TokenizerException.__init__(self, msg)

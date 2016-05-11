@@ -1,8 +1,19 @@
+from html_template_parser.error import *
 from html_template_parser.lexem import Lexem, keywords, symbols
+
+
+__all__ = [
+    'Tokenizer',
+    'Token'
+]
 
 
 def is_number(str):
     return str.replace('.', '', 1).isdigit()
+
+
+def is_whitespace(token):
+    return token.id == 44
 
 
 class Token:
@@ -17,27 +28,32 @@ class Token:
 class Tokenizer:
     """Class generates tokens based on source_controller input stream."""
 
-    def __init__(self, source_controller):
-        self._source_controller = source_controller
+    def __init__(self, input_stream):
+        self._source_controller = SourceController(input_stream)
         self._is_template = False
         self._is_comment = False
         self._template_end_token_id = None
         self._read_source = ''
 
-    def get_tokens(self):
-        """Token generator."""
-        token = self.get_next_token()
+    def get_tokens(self, omit_whitespace=False):
+        """Token generator. Can omit whitespaces if argument whitespace is False"""
+        token = self.get_next_token(omit_whitespace)
         while token.id is not Lexem.EOI:
             yield token
-            token = self.get_next_token()
+            token = self.get_next_token(omit_whitespace)
 
-    def get_next_token(self):
+    def get_next_token(self, omit_whitespace=False):
         if self.is_end():
-            return Token(Lexem.EOI)
+            token = Token(Lexem.EOI)
         elif self._is_template:
-            return self._get_template_token()
+            token = self._get_template_token()
         else:
-            return self._get_html_token()
+            token = self._get_html_token()
+
+        if omit_whitespace and is_whitespace(token):
+            return self.get_next_token(omit_whitespace)
+        else:
+            return token
 
     def is_end(self):
         return bool(not self._read_source and not self._source_controller.has_char())
@@ -96,7 +112,9 @@ class Tokenizer:
             self._read_source = content[1:] + self._read_source
             return Token(symbols[content[0]])
         else:
-            return Token(Lexem.ERROR, 'Unrecognised construction: {}'.format(content))
+            raise UnrecognisedConstruction(self._source_controller.line_number,
+                                           self._source_controller.position_number - len(self._read_source) - 1,
+                                           'Unrecognised construction: {}'.format(content[0]))
 
     def _get_number_token(self, first_digit):
         number = first_digit
@@ -117,7 +135,9 @@ class Tokenizer:
         if char == quotation:
             return Token(Lexem.STRING, string)
         else:
-            return Token(Lexem.ERROR, 'Unclosed string')
+            raise IncompleteToken(self._source_controller.line_number,
+                                  self._source_controller.position_number - len(self._read_source),
+                                  'Unclosed string')
 
     def _get_keyword_or_identifier_token(self, quotation):
         char = self._get_next_char()

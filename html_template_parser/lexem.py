@@ -2,7 +2,6 @@ import enum
 
 
 class Lexem(enum.IntEnum):
-    ERROR = 0
     EOI = 1
 
     NUMBER = 2

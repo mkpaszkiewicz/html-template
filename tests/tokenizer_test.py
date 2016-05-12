@@ -3,8 +3,9 @@ import itertools
 import unittest
 from contextlib import closing
 
-from html_template_parser import Tokenizer, Lexem, Token, IncompleteToken, UnrecognisedConstruction
-from html_template_parser.tokenizer import SourceController
+from html_template_parser.error import *
+from html_template_parser.lexem import *
+from html_template_parser.tokenizer import Tokenizer, Token, SourceController
 
 
 class SourceControllerTest(unittest.TestCase):
@@ -70,133 +71,133 @@ class TokenizerTest(unittest.TestCase):
     def test_should_return_template_token(self):
         with closing(io.StringIO('{%%}')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.TEMPLATE_OPEN), Token(Lexem.TEMPLATE_CLOSE)]
+            tokens = [Token(Lexem.STATEMENT_OPEN), Token(Lexem.STATEMENT_CLOSE)]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_statement_token(self):
         with closing(io.StringIO('{{}}')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.STATEMENT_OPEN), Token(Lexem.STATEMENT_CLOSE)]
+            tokens = [Token(Lexem.PRINT_OPEN), Token(Lexem.PRINT_CLOSE)]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_plus_token(self):
         with closing(io.StringIO('{{+')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.STATEMENT_OPEN), Token(Lexem.PLUS)]
+            tokens = [Token(Lexem.PRINT_OPEN), Token(Lexem.PLUS)]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_minus_token(self):
         with closing(io.StringIO('{{-')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.STATEMENT_OPEN), Token(Lexem.MINUS)]
+            tokens = [Token(Lexem.PRINT_OPEN), Token(Lexem.MINUS)]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_div_token(self):
         with closing(io.StringIO('{{/')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.STATEMENT_OPEN), Token(Lexem.SLASH)]
+            tokens = [Token(Lexem.PRINT_OPEN), Token(Lexem.SLASH)]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_mod_token(self):
         with closing(io.StringIO('{{%')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.STATEMENT_OPEN), Token(Lexem.MOD)]
+            tokens = [Token(Lexem.PRINT_OPEN), Token(Lexem.MOD)]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_mul_token(self):
         with closing(io.StringIO('{{*')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.STATEMENT_OPEN), Token(Lexem.STAR)]
+            tokens = [Token(Lexem.PRINT_OPEN), Token(Lexem.STAR)]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_keyword_token(self):
         with closing(io.StringIO('{%macro')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.TEMPLATE_OPEN), Token(Lexem.MACRO)]
+            tokens = [Token(Lexem.STATEMENT_OPEN), Token(Lexem.MACRO)]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_identifier_token(self):
         with closing(io.StringIO('{%identifier')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.TEMPLATE_OPEN), Token(Lexem.IDENTIFIER, 'identifier')]
+            tokens = [Token(Lexem.STATEMENT_OPEN), Token(Lexem.IDENTIFIER, 'identifier')]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_assign_token(self):
         with closing(io.StringIO('{{=')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.STATEMENT_OPEN), Token(Lexem.ASSIGN)]
+            tokens = [Token(Lexem.PRINT_OPEN), Token(Lexem.ASSIGN)]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_lower_than_token(self):
         with closing(io.StringIO('{{<')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.STATEMENT_OPEN), Token(Lexem.LT)]
+            tokens = [Token(Lexem.PRINT_OPEN), Token(Lexem.LT)]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_greater_than_token(self):
         with closing(io.StringIO('{{>')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.STATEMENT_OPEN), Token(Lexem.GT)]
+            tokens = [Token(Lexem.PRINT_OPEN), Token(Lexem.GT)]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_lower_or_equal_token(self):
         with closing(io.StringIO('{{<=')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.STATEMENT_OPEN), Token(Lexem.LE)]
+            tokens = [Token(Lexem.PRINT_OPEN), Token(Lexem.LE)]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_greater_or_equal_token(self):
         with closing(io.StringIO('{{>=')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.STATEMENT_OPEN), Token(Lexem.GE)]
+            tokens = [Token(Lexem.PRINT_OPEN), Token(Lexem.GE)]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_equal_token(self):
         with closing(io.StringIO('{{==')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.STATEMENT_OPEN), Token(Lexem.EQ)]
+            tokens = [Token(Lexem.PRINT_OPEN), Token(Lexem.EQ)]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_not_equal_token(self):
         with closing(io.StringIO('{{!=')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.STATEMENT_OPEN), Token(Lexem.NEQ)]
+            tokens = [Token(Lexem.PRINT_OPEN), Token(Lexem.NEQ)]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_comma_token(self):
         with closing(io.StringIO('{{,')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.STATEMENT_OPEN), Token(Lexem.COMMA)]
+            tokens = [Token(Lexem.PRINT_OPEN), Token(Lexem.COMMA)]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_dot_token(self):
         with closing(io.StringIO('{{.')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.STATEMENT_OPEN), Token(Lexem.DOT)]
+            tokens = [Token(Lexem.PRINT_OPEN), Token(Lexem.DOT)]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_left_bracket_token(self):
         with closing(io.StringIO('{{(')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.STATEMENT_OPEN), Token(Lexem.LEFT_BRACKET)]
+            tokens = [Token(Lexem.PRINT_OPEN), Token(Lexem.LEFT_BRACKET)]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_right_bracket_token(self):
         with closing(io.StringIO('{{)')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.STATEMENT_OPEN), Token(Lexem.RIGHT_BRACKET)]
+            tokens = [Token(Lexem.PRINT_OPEN), Token(Lexem.RIGHT_BRACKET)]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_left_square_bracket_token(self):
         with closing(io.StringIO('{{[')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.STATEMENT_OPEN), Token(Lexem.LEFT_SQUARE_BRACKET)]
+            tokens = [Token(Lexem.PRINT_OPEN), Token(Lexem.LEFT_SQUARE_BRACKET)]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_right_square_bracket_token(self):
         with closing(io.StringIO('{{]')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.STATEMENT_OPEN), Token(Lexem.RIGHT_SQUARE_BRACKET)]
+            tokens = [Token(Lexem.PRINT_OPEN), Token(Lexem.RIGHT_SQUARE_BRACKET)]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_comment_token(self):
@@ -208,38 +209,38 @@ class TokenizerTest(unittest.TestCase):
     def test_should_return_statement_tokens(self):
         with closing(io.StringIO('<span>{{}}</span>')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.STATEMENT_OPEN), Token(Lexem.STATEMENT_CLOSE),
+            tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.PRINT_OPEN), Token(Lexem.PRINT_CLOSE),
                       Token(Lexem.HTML, '</span>')]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_string_tokens(self):
         with closing(io.StringIO('<span>{{\'str1{{1+2}}b\'"str2\'/{#%"""\'\'}}</span>')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.STATEMENT_OPEN), Token(Lexem.STRING, '\'str1{{1+2}}b\''),
+            tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.PRINT_OPEN), Token(Lexem.STRING, '\'str1{{1+2}}b\''),
                       Token(Lexem.STRING, '"str2\'/{#%"'), Token(Lexem.STRING, '""'), Token(Lexem.STRING, '\'\''),
-                      Token(Lexem.STATEMENT_CLOSE), Token(Lexem.HTML, '</span>')]
+                      Token(Lexem.PRINT_CLOSE), Token(Lexem.HTML, '</span>')]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_raise_incomplete_token_exception(self):
         with closing(io.StringIO('<span>{{"}}</span>')) as input_stream:
             tokenizer = Tokenizer(input_stream)
             self.assertEqual(Token(Lexem.HTML, '<span>'), tokenizer.get_next_token())
-            self.assertEqual(Token(Lexem.STATEMENT_OPEN), tokenizer.get_next_token())
-            self.assertRaises(IncompleteToken, tokenizer.get_next_token)
+            self.assertEqual(Token(Lexem.PRINT_OPEN), tokenizer.get_next_token())
+            self.assertRaises(ParserSyntaxError, tokenizer.get_next_token)
 
     def test_should_return_raise_incomplete_unrecognised_construction(self):
         with closing(io.StringIO('<span>{{^2 + 1}}</span>')) as input_stream:
             tokenizer = Tokenizer(input_stream)
             self.assertEqual(Token(Lexem.HTML, '<span>'), tokenizer.get_next_token())
-            self.assertEqual(Token(Lexem.STATEMENT_OPEN), tokenizer.get_next_token())
-            self.assertRaises(UnrecognisedConstruction, tokenizer.get_next_token)
+            self.assertEqual(Token(Lexem.PRINT_OPEN), tokenizer.get_next_token())
+            self.assertRaises(ParserSyntaxError, tokenizer.get_next_token)
 
     def test_should_return_number_tokens(self):
         with closing(io.StringIO('<span>{{123}}{{12.3}}</span>')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.STATEMENT_OPEN), Token(Lexem.NUMBER, 123),
-                      Token(Lexem.STATEMENT_CLOSE), Token(Lexem.STATEMENT_OPEN),
-                      Token(Lexem.NUMBER, 12.3), Token(Lexem.STATEMENT_CLOSE), Token(Lexem.HTML, '</span>')]
+            tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.PRINT_OPEN), Token(Lexem.INT, 123),
+                      Token(Lexem.PRINT_CLOSE), Token(Lexem.PRINT_OPEN),
+                      Token(Lexem.NUMBER, 12.3), Token(Lexem.PRINT_CLOSE), Token(Lexem.HTML, '</span>')]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_comment_tokens(self):
@@ -252,41 +253,41 @@ class TokenizerTest(unittest.TestCase):
     def test_should_return_whitespace_tokens(self):
         with closing(io.StringIO('<span>{% \n %}</span>')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.TEMPLATE_OPEN), Token(Lexem.SPACE),
-                      Token(Lexem.NEW_LINE), Token(Lexem.SPACE), Token(Lexem.TEMPLATE_CLOSE),
+            tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.STATEMENT_OPEN), Token(Lexem.SPACE),
+                      Token(Lexem.NEW_LINE), Token(Lexem.SPACE), Token(Lexem.STATEMENT_CLOSE),
                       Token(Lexem.HTML, '</span>')]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_keyword_and_identifier_tokens(self):
         with closing(io.StringIO('<span>{% if condition %}Hello World{% endif %}</span>')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.TEMPLATE_OPEN), Token(Lexem.SPACE),
+            tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.STATEMENT_OPEN), Token(Lexem.SPACE),
                       Token(Lexem.IF), Token(Lexem.SPACE), Token(Lexem.IDENTIFIER, 'condition'),
-                      Token(Lexem.SPACE), Token(Lexem.TEMPLATE_CLOSE), Token(Lexem.HTML, 'Hello World'),
-                      Token(Lexem.TEMPLATE_OPEN), Token(Lexem.SPACE), Token(Lexem.ENDIF),
-                      Token(Lexem.SPACE), Token(Lexem.TEMPLATE_CLOSE), Token(Lexem.HTML, '</span>')]
+                      Token(Lexem.SPACE), Token(Lexem.STATEMENT_CLOSE), Token(Lexem.HTML, 'Hello World'),
+                      Token(Lexem.STATEMENT_OPEN), Token(Lexem.SPACE), Token(Lexem.ENDIF),
+                      Token(Lexem.SPACE), Token(Lexem.STATEMENT_CLOSE), Token(Lexem.HTML, '</span>')]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_expression_tokens(self):
-        with closing(io.StringIO('<span>{% set var = (2+4%3) %}</span>')) as input_stream:
+        with closing(io.StringIO('<span>{% set var = (2+4%3.0) %}</span>')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.TEMPLATE_OPEN), Token(Lexem.SPACE),
+            tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.STATEMENT_OPEN), Token(Lexem.SPACE),
                       Token(Lexem.SET), Token(Lexem.SPACE), Token(Lexem.IDENTIFIER, 'var'),
                       Token(Lexem.SPACE), Token(Lexem.ASSIGN), Token(Lexem.SPACE),
-                      Token(Lexem.LEFT_BRACKET), Token(Lexem.NUMBER, 2), Token(Lexem.PLUS),
-                      Token(Lexem.NUMBER, 4), Token(Lexem.MOD), Token(Lexem.NUMBER, 3),
-                      Token(Lexem.RIGHT_BRACKET), Token(Lexem.SPACE), Token(Lexem.TEMPLATE_CLOSE),
+                      Token(Lexem.LEFT_BRACKET), Token(Lexem.INT, 2), Token(Lexem.PLUS),
+                      Token(Lexem.INT, 4), Token(Lexem.MOD), Token(Lexem.NUMBER, 3),
+                      Token(Lexem.RIGHT_BRACKET), Token(Lexem.SPACE), Token(Lexem.STATEMENT_CLOSE),
                       Token(Lexem.HTML, '</span>')]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
     def test_should_return_token_list_without_whitespaces(self):
         with closing(io.StringIO('<span>{% if condition %}Hello World{% endif %}</span>')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.TEMPLATE_OPEN),
+            tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.STATEMENT_OPEN),
                       Token(Lexem.IF), Token(Lexem.IDENTIFIER, 'condition'),
-                      Token(Lexem.TEMPLATE_CLOSE), Token(Lexem.HTML, 'Hello World'),
-                      Token(Lexem.TEMPLATE_OPEN), Token(Lexem.ENDIF),
-                      Token(Lexem.TEMPLATE_CLOSE), Token(Lexem.HTML, '</span>')]
+                      Token(Lexem.STATEMENT_CLOSE), Token(Lexem.HTML, 'Hello World'),
+                      Token(Lexem.STATEMENT_OPEN), Token(Lexem.ENDIF),
+                      Token(Lexem.STATEMENT_CLOSE), Token(Lexem.HTML, '</span>')]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens(True)))
 
     def assertTokenListEqual(self, tokens1, tokens2):

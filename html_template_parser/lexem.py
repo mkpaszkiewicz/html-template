@@ -2,8 +2,9 @@ import enum
 
 
 class Lexem(enum.IntEnum):
-    EOI = 1
+    EOI = 0
 
+    INT = 1
     NUMBER = 2
     STRING = 3
     IDENTIFIER = 4
@@ -44,10 +45,10 @@ class Lexem(enum.IntEnum):
     LEFT_SQUARE_BRACKET = 34
     RIGHT_SQUARE_BRACKET = 35
 
-    TEMPLATE_OPEN = 36
-    TEMPLATE_CLOSE = 37
-    STATEMENT_OPEN = 38
-    STATEMENT_CLOSE = 39
+    STATEMENT_OPEN = 36
+    STATEMENT_CLOSE = 37
+    PRINT_OPEN = 38
+    PRINT_CLOSE = 39
     COMMENT_OPEN = 40
     COMMENT_CLOSE = 41
 
@@ -76,6 +77,8 @@ keywords = {
     'not': Lexem.NOT
 }
 
+reverted_keywords = dict(zip(keywords.values(), keywords.keys()))
+
 symbols = {
     '+': Lexem.PLUS,
     '-': Lexem.MINUS,
@@ -98,10 +101,10 @@ symbols = {
     '[': Lexem.LEFT_SQUARE_BRACKET,
     ']': Lexem.RIGHT_SQUARE_BRACKET,
 
-    '{%': Lexem.TEMPLATE_OPEN,
-    '%}': Lexem.TEMPLATE_CLOSE,
-    '{{': Lexem.STATEMENT_OPEN,
-    '}}': Lexem.STATEMENT_CLOSE,
+    '{%': Lexem.STATEMENT_OPEN,
+    '%}': Lexem.STATEMENT_CLOSE,
+    '{{': Lexem.PRINT_OPEN,
+    '}}': Lexem.PRINT_CLOSE,
     '{#': Lexem.COMMENT_OPEN,
     '#}': Lexem.COMMENT_CLOSE,
 
@@ -109,3 +112,5 @@ symbols = {
     '\n': Lexem.NEW_LINE,
     '\t': Lexem.TAB
 }
+
+reverted_symbols = dict(zip(symbols.values(), symbols.keys()))

@@ -1,7 +1,6 @@
 from html_template_parser.error import *
 from html_template_parser.lexem import Lexem, keywords, symbols
 
-
 __all__ = [
     'Tokenizer',
     'Token'
@@ -46,10 +45,10 @@ class Tokenizer:
 
     def get_next_token(self, omit_whitespace=False):
         if self.is_end():
-            return Token(Lexem.EOI)
+            line, position = self.get_current_position()
+            return Token(Lexem.EOI, line=line, position=position)
 
-        line = self._source_controller.line_number + int(self._source_controller.line_number == 0)
-        position = self._source_controller.position_number - len(self._read_source) + 1
+        line, position = self.get_current_position()
         if self._is_template:
             token = self._get_template_token()
         else:
@@ -64,6 +63,11 @@ class Tokenizer:
 
     def is_end(self):
         return bool(not self._read_source and not self._source_controller.has_char())
+
+    def get_current_position(self):
+        line = self._source_controller.line_number + int(self._source_controller.line_number == 0)
+        position = self._source_controller.position_number - len(self._read_source) + 1
+        return line, position
 
     def _get_next_char(self):
         """First, reads from _read_source than from _source_controller.
@@ -119,9 +123,9 @@ class Tokenizer:
             self._read_source = content[1:] + self._read_source
             return Token(symbols[content[0]])
         else:
-            raise UnrecognisedConstruction(self._source_controller.line_number,
-                                           self._source_controller.position_number - len(self._read_source) - 1,
-                                           'Unrecognised construction: {}'.format(content[0]))
+            raise ParserSyntaxError('Unrecognised construction: {}'.format(content[0]),
+                                    self._source_controller.line_number,
+                                    self._source_controller.position_number - len(self._read_source) - 1)
 
     def _get_number_token(self, first_digit):
         number = first_digit
@@ -131,7 +135,10 @@ class Tokenizer:
         if not is_number(number):
             self._read_source = number[-1:] + self._read_source
             number = number[:-1]
-        return Token(Lexem.NUMBER, float(number))
+        if '.' in number:
+            return Token(Lexem.NUMBER, float(number))
+        else:
+            return Token(Lexem.INT, int(number))
 
     def _get_string_token(self, quotation):
         char = self._get_next_char()
@@ -142,9 +149,9 @@ class Tokenizer:
         if char == quotation:
             return Token(Lexem.STRING, string)
         else:
-            raise IncompleteToken(self._source_controller.line_number,
-                                  self._source_controller.position_number - len(self._read_source),
-                                  'Unclosed string')
+            raise ParserSyntaxError('Unclosed string',
+                                    self._source_controller.line_number,
+                                    self._source_controller.position_number - len(self._read_source))
 
     def _get_keyword_or_identifier_token(self, quotation):
         char = self._get_next_char()

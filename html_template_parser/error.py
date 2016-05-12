@@ -1,15 +1,19 @@
 __all__ = [
-    'ParserException',
-    'UnrecognisedConstruction',
-    'IncompleteToken'
+    'ParserError',
+    'ParserSyntaxError',
+    'ParserSemanticError'
 ]
 
 
-class ParserException(Exception):
+class ParserError(Exception):
     """Base class for all parser exceptions."""
 
-    def __init__(self, msg, line, position):
-        self.message = '{}:{}: error: {}'.format(line, position, msg)
+    def __init__(self, msg, position=None):
+        if position:
+            pos = '{}:{}: '.format(position[0], position[1])
+        else:
+            pos = ''
+        self.message = '{}error: {}'.format(pos, msg)
         Exception.__init__(self, msg)
 
     def __repr__(self):
@@ -18,15 +22,16 @@ class ParserException(Exception):
     __str__ = __repr__
 
 
-class UnrecognisedConstruction(ParserException):
-    """Raised when forbidden symbols are met."""
+class ParserSyntaxError(ParserError):
+    """Raised when forbidden symbols are met or
+    token is incomplete e.g. unclosed string"""
 
-    def __init__(self, line, position, error_msg):
-        ParserException.__init__(self, line, position, error_msg)
+    def __init__(self, msg, line, position):
+        ParserError.__init__(self, msg, (line, position))
 
 
-class IncompleteToken(ParserException):
-    """Raised when any token is incomplete e.g. unclosed string"""
+class ParserSemanticError(ParserError):
+    """Raised when dividing by 0"""
 
-    def __init__(self, line, position, error_msg):
-        ParserException.__init__(self, line, position, error_msg)
+    def __init__(self, msg):
+        ParserError.__init__(self, msg)

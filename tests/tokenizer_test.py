@@ -213,11 +213,17 @@ class TokenizerTest(unittest.TestCase):
                       Token(Lexem.HTML, '</span>')]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
+    def test_should_return_string_token(self):
+        with closing(io.StringIO('{{"Hello World"}}')) as input_stream:
+            tokenizer = Tokenizer(input_stream)
+            tokens = [Token(Lexem.PRINT_OPEN), Token(Lexem.STRING, 'Hello World'), Token(Lexem.PRINT_CLOSE)]
+            self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
+
     def test_should_return_string_tokens(self):
         with closing(io.StringIO('<span>{{\'str1{{1+2}}b\'"str2\'/{#%"""\'\'}}</span>')) as input_stream:
             tokenizer = Tokenizer(input_stream)
-            tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.PRINT_OPEN), Token(Lexem.STRING, '\'str1{{1+2}}b\''),
-                      Token(Lexem.STRING, '"str2\'/{#%"'), Token(Lexem.STRING, '""'), Token(Lexem.STRING, '\'\''),
+            tokens = [Token(Lexem.HTML, '<span>'), Token(Lexem.PRINT_OPEN), Token(Lexem.STRING, 'str1{{1+2}}b'),
+                      Token(Lexem.STRING, 'str2\'/{#%'), Token(Lexem.STRING, ''), Token(Lexem.STRING, ''),
                       Token(Lexem.PRINT_CLOSE), Token(Lexem.HTML, '</span>')]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens()))
 
@@ -288,6 +294,18 @@ class TokenizerTest(unittest.TestCase):
                       Token(Lexem.STATEMENT_CLOSE), Token(Lexem.HTML, 'Hello World'),
                       Token(Lexem.STATEMENT_OPEN), Token(Lexem.ENDIF),
                       Token(Lexem.STATEMENT_CLOSE), Token(Lexem.HTML, '</span>')]
+            self.assertTokenListEqual(tokens, list(tokenizer.get_tokens(True)))
+
+    def test_should_return_boolean_true(self):
+        with closing(io.StringIO('{{ True }}')) as input_stream:
+            tokenizer = Tokenizer(input_stream)
+            tokens = [Token(Lexem.PRINT_OPEN), Token(Lexem.TRUE), Token(Lexem.PRINT_CLOSE)]
+            self.assertTokenListEqual(tokens, list(tokenizer.get_tokens(True)))
+
+    def test_should_return_boolean_false(self):
+        with closing(io.StringIO('{{ False }}')) as input_stream:
+            tokenizer = Tokenizer(input_stream)
+            tokens = [Token(Lexem.PRINT_OPEN), Token(Lexem.FALSE), Token(Lexem.PRINT_CLOSE)]
             self.assertTokenListEqual(tokens, list(tokenizer.get_tokens(True)))
 
     def assertTokenListEqual(self, tokens1, tokens2):

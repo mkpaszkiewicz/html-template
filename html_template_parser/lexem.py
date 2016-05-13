@@ -59,6 +59,9 @@ class Lexem(enum.IntEnum):
     NEW_LINE = 44
     TAB = 44
 
+    TRUE = 45
+    FALSE = 46
+
 
 keywords = {
     'macro': Lexem.MACRO,
@@ -74,7 +77,10 @@ keywords = {
 
     'and': Lexem.AND,
     'or': Lexem.OR,
-    'not': Lexem.NOT
+    'not': Lexem.NOT,
+
+    'True': Lexem.TRUE,
+    'False': Lexem.FALSE
 }
 
 reverted_keywords = dict(zip(keywords.values(), keywords.keys()))

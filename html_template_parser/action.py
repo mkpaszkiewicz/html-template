@@ -73,10 +73,10 @@ class DivisionOperator(ParserNode):
         self.operand2 = operand2
 
     def execute(self):
-        divisor = self.operand2.execute()
-        if divisor == 0:
-            raise ParserSemanticError('Division by 0')
-        return self.operand1.execute() / divisor
+        try:
+            return self.operand1.execute() / self.operand2.execute()
+        except ZeroDivisionError as exc:
+            raise ParserSemanticError(exc)
 
 
 class ModuloOperator(ParserNode):
@@ -97,7 +97,7 @@ class NotEqualOperator(ParserNode):
         self.operand2 = operand2
 
     def execute(self):
-        return bool(self.operand1.execute()) != bool(self.operand2.execute())
+        return self.operand1.execute() != self.operand2.execute()
 
 
 class EqualOperator(ParserNode):
@@ -106,16 +106,16 @@ class EqualOperator(ParserNode):
         self.operand2 = operand2
 
     def execute(self):
-        return bool(self.operand1.execute()) == bool(self.operand2.execute())
+        return self.operand1.execute() == self.operand2.execute()
 
 
-class LessOrEqualOperator(ParserNode):
+class LowerOrEqualOperator(ParserNode):
     def __init__(self, operand1, operand2):
         self.operand1 = operand1
         self.operand2 = operand2
 
     def execute(self):
-        return bool(self.operand1.execute()) <= bool(self.operand2.execute())
+        return self.operand1.execute() <= self.operand2.execute()
 
 
 class GreaterOrEqualOperator(ParserNode):
@@ -124,16 +124,16 @@ class GreaterOrEqualOperator(ParserNode):
         self.operand2 = operand2
 
     def execute(self):
-        return bool(self.operand1.execute()) >= bool(self.operand2.execute())
+        return self.operand1.execute() >= self.operand2.execute()
 
 
-class LessOperator(ParserNode):
+class LowerOperator(ParserNode):
     def __init__(self, operand1, operand2):
         self.operand1 = operand1
         self.operand2 = operand2
 
     def execute(self):
-        return bool(self.operand1.execute()) < bool(self.operand2.execute())
+        return self.operand1.execute() < self.operand2.execute()
 
 
 class GreaterOperator(ParserNode):
@@ -142,7 +142,7 @@ class GreaterOperator(ParserNode):
         self.operand2 = operand2
 
     def execute(self):
-        return bool(self.operand1.execute()) > bool(self.operand2.execute())
+        return self.operand1.execute() > self.operand2.execute()
 
 
 class NotOperator(ParserNode):
@@ -150,7 +150,7 @@ class NotOperator(ParserNode):
         self.operand = operand
 
     def execute(self):
-        return not bool(self.operand.execute())
+        return not self.operand.execute()
 
 
 class OrOperator(ParserNode):
@@ -159,7 +159,7 @@ class OrOperator(ParserNode):
         self.operand2 = operand2
 
     def execute(self):
-        return bool(self.operand1.execute()) or bool(self.operand2.execute())
+        return self.operand1.execute() or self.operand2.execute()
 
 
 class AndOperator(ParserNode):
@@ -168,7 +168,7 @@ class AndOperator(ParserNode):
         self.operand2 = operand2
 
     def execute(self):
-        return bool(self.operand1.execute()) and bool(self.operand2.execute())
+        return self.operand1.execute() and self.operand2.execute()
 
 
 class MinusOperator(ParserNode):
@@ -185,3 +185,15 @@ class PlusOperator(ParserNode):
 
     def execute(self):
         return +self.operand.execute()
+
+
+class InOperator(ParserNode):
+    def __init__(self, operand1, operand2):
+        self.operand1 = operand1
+        self.operand2 = operand2
+
+    def execute(self):
+        try:
+            return self.operand1.execute() in self.operand2.execute()
+        except TypeError as exc:
+            raise ParserSemanticError(exc)

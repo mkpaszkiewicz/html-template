@@ -83,8 +83,107 @@ class ParserTest(unittest.TestCase):
             self.assertRaises(ParserSemanticError, parse, input_stream)
 
     def test_should_raise_syntax_error(self):
-        with closing(io.StringIO('{{17 / 0')) as input_stream:
+        with closing(io.StringIO('{{17 / 3')) as input_stream:
             self.assertRaises(ParserSyntaxError, parse, input_stream)
+
+    def test_should_print_string(self):
+        with closing(io.StringIO('{{ "Hello world" }}')) as input_stream:
+            output = parse(input_stream)
+            self.assertEqual('Hello world', output)
+
+    def test_should_concatenate_strings(self):
+        with closing(io.StringIO('{{ "Hello " + "world" }}')) as input_stream:
+            output = parse(input_stream)
+            self.assertEqual('Hello world', output)
+
+    def test_should_accept_both_string_quatation(self):
+        with closing(io.StringIO('{{ "Hello " + \'world\' }}')) as input_stream:
+            output = parse(input_stream)
+            self.assertEqual('Hello world', output)
+
+    def test_should_print_boolean_true(self):
+        with closing(io.StringIO('{{ True }}')) as input_stream:
+            output = parse(input_stream)
+            self.assertEqual('True', output)
+
+    def test_should_print_boolean_false(self):
+        with closing(io.StringIO('{{ False }}')) as input_stream:
+            output = parse(input_stream)
+            self.assertEqual('False', output)
+
+    def test_should_add_booleans(self):
+        with closing(io.StringIO('{{ True + False }}')) as input_stream:
+            output = parse(input_stream)
+            self.assertEqual('1', output)
+
+    def test_should_multiply_booleans(self):
+        with closing(io.StringIO('{{ 4 * True }}')) as input_stream:
+            output = parse(input_stream)
+            self.assertEqual('4', output)
+
+    def test_should_conjunct_boolean_expression(self):
+        with closing(io.StringIO('{{ True and False }}')) as input_stream:
+            output = parse(input_stream)
+            self.assertEqual('False', output)
+
+    def test_should_alternate_boolean_expression(self):
+        with closing(io.StringIO('{{ True or False }}')) as input_stream:
+            output = parse(input_stream)
+            self.assertEqual('True', output)
+
+    def test_should_conjunct_complex_boolean_expression1(self):
+        with closing(io.StringIO('{{ not True and False or not False and True}}')) as input_stream:
+            output = parse(input_stream)
+            self.assertEqual('True', output)
+
+    def test_should_conjunct_complex_boolean_expression2(self):
+        with closing(io.StringIO('{{ 2 and (False or not False) and True}}')) as input_stream:
+            output = parse(input_stream)
+            self.assertEqual('True', output)
+
+    def test_should_return_string_from_boolean_expression(self):
+        with closing(io.StringIO('{{ False or "str"}}')) as input_stream:
+            output = parse(input_stream)
+            self.assertEqual('str', output)
+
+    def test_should_check_if_char_is_in_string(self):
+        with closing(io.StringIO('{{ "t" in "str"}}')) as input_stream:
+            output = parse(input_stream)
+            self.assertEqual('True', output)
+
+    def test_should_check_if_char_is_not_in_string(self):
+        with closing(io.StringIO('{{ not "a" in "str"}}')) as input_stream:
+            output = parse(input_stream)
+            self.assertEqual('True', output)
+
+    def test_should_raise_semantic_error(self):
+        with closing(io.StringIO('{{ True in "str" }}')) as input_stream:
+            self.assertRaises(ParserSemanticError, parse, input_stream)
+
+    def test_should_compare_integers1(self):
+        with closing(io.StringIO('{{ 5 > 3 }}')) as input_stream:
+            output = parse(input_stream)
+            self.assertEqual('True', output)
+
+    def test_should_compare_integers2(self):
+        with closing(io.StringIO('{{ 5 < 3 }}')) as input_stream:
+            output = parse(input_stream)
+            self.assertEqual('False', output)
+
+    def test_should_compare_integers3(self):
+        with closing(io.StringIO('{{ 2 == 2 }}')) as input_stream:
+            output = parse(input_stream)
+            self.assertEqual('True', output)
+
+    def test_should_compare_integers4(self):
+        with closing(io.StringIO('{{ 2 != 2 }}')) as input_stream:
+            output = parse(input_stream)
+            self.assertEqual('False', output)
+
+    def test_should_compare_arithmetic_results(self):
+        with closing(io.StringIO('{{ 2 * 3 >= 6 and 2 < 6 }}')) as input_stream:
+            output = parse(input_stream)
+            self.assertEqual('True', output)
 
 if __name__ == '__main__':
     unittest.main()

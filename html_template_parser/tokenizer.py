@@ -142,12 +142,12 @@ class Tokenizer:
 
     def _get_string_token(self, quotation):
         char = self._get_next_char()
-        string = quotation + char
+        string = char
         while not self.is_end() and char != quotation:
             char = self._get_next_char()
             string += char
         if char == quotation:
-            return Token(Lexem.STRING, string)
+            return Token(Lexem.STRING, string[:-1])
         else:
             raise ParserSyntaxError('Unclosed string',
                                     self._source_controller.line_number,

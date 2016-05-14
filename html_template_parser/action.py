@@ -238,16 +238,27 @@ class IfStatement(ParserNode):
 
 
 class ForStatement(ParserNode):
-    def __init__(self, comp_expression, inside_statements):
-        self.comp_expression = comp_expression
+    def __init__(self, identifier, collection, inside_statements, scope_context):
+        self.identifier = identifier
+        self.collection = collection
         self.inside_statements = inside_statements
+        self.scope_context = scope_context
 
     def execute(self):
         result = ''
-        if self.comp_expression.execute():
+        for element in self.collection.execute():
+            self.scope_context.add(self.identifier, element)
             for statement in self.inside_statements:
                 result += statement.execute()
-        elif self.else_statement:
-            for statement in self.else_statement:
-                result += statement.execute()
         return result
+
+
+class SetStatement(ParserNode):
+    def __init__(self, identifier, value, scope_context):
+        self.identifier = identifier
+        self.value = value
+        self.scope_context = scope_context
+
+    def execute(self):
+        self.scope_context.add(self.identifier, self.value.execute())
+        return ''

@@ -14,9 +14,9 @@ class ParserTest(unittest.TestCase):
     def setUpClass(cls):
         with open(cls.CSV_FILE, 'w+') as f:
             f.write('firstname,lastname,salary,age\n'
-                     'Brad,Smith,2500.00,34\n'
-                     'Will,Pitt,3000.00,42\n'
-                     'Jennifer,Polez,100.00,17\n')
+                    'Brad,Smith,2500.00,34\n'
+                    'Will,Pitt,3000.00,42\n'
+                    'Jennifer,Polez,100.00,17\n')
 
     @classmethod
     def tearDownClass(cls):
@@ -219,6 +219,15 @@ class ParserTest(unittest.TestCase):
             output = parse(input_stream)
             self.assertEqual('World', output)
 
+    def test_should_print_value_define_in_set_statement(self):
+        with closing(io.StringIO("{% set value = 123 %}{{ value }}")) as input_stream:
+            output = parse(input_stream)
+            self.assertEqual('123', output)
+
+    def test_should_raise_exception_unknown_identifier(self):
+        with closing(io.StringIO("{% set value = 123 %}{{ constant }}")) as input_stream:
+            self.assertRaises(ParserSemanticError, parse, input_stream)
+
     def test_should_get_value_from_csv_file(self):
         with closing(io.StringIO("{{ csv[0]['age'] }}")) as input_stream:
             output = parse(input_stream, self.CSV_FILE)
@@ -242,6 +251,11 @@ class ParserTest(unittest.TestCase):
         with closing(io.StringIO("{{ csv[-1]['age'] }}")) as input_stream:
             output = parse(input_stream, self.CSV_FILE)
             self.assertEqual('17', output)
+
+    def test_should_print_values_from_csv_file_in_a_loop(self):
+        with closing(io.StringIO("{% for value in csv %}{{ value['firstname'] + ' ' }}{% endfor %}")) as input_stream:
+            output = parse(input_stream, self.CSV_FILE)
+            self.assertEqual('Brad Will Jennifer ', output)
 
     if __name__ == '__main__':
         unittest.main()

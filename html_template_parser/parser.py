@@ -37,7 +37,13 @@ class ScopeContext:
                     self.model['csv'].append(row)
 
     def find(self, identifier):
-        return self.model[identifier]
+        try:
+            return self.model[identifier]
+        except KeyError:
+            raise ParserSemanticError('Unknown identifier \'{}\''.format(identifier))
+
+    def add(self, identifier, value):
+        self.model[identifier] = value
 
 
 class Parser:
@@ -98,7 +104,9 @@ class Parser:
         if self.current_token.id == Lexem.IF:
             return self.if_statement()
         elif self.current_token.id == Lexem.FOR:
-            return self.if_statement()
+            return self.for_statement()
+        elif self.current_token.id == Lexem.SET:
+            return self.set_statement()
         # TODO implement other statements
         elif self.current_token.id in [Lexem.ENDIF, Lexem.ELSE, Lexem.ELIF, Lexem.ENDFOR]:
             raise self.StatementClose()
@@ -129,6 +137,30 @@ class Parser:
         else:
             raise self.unexpected_token_error()
         return IfStatement(comp_expression, inside_statements, else_statements)
+
+    def for_statement(self):
+        self.accept(Lexem.FOR)
+        identifier = self.current_token.content
+        self.accept(Lexem.IDENTIFIER)
+        self.accept(Lexem.IN)
+        collection = self.expression()
+        self.accept(Lexem.STATEMENT_CLOSE)
+        inside_statements = self.get_statements()
+        if self.current_token.id == Lexem.ENDFOR:
+            self.accept(Lexem.ENDFOR)
+            self.accept(Lexem.STATEMENT_CLOSE)
+        else:
+            raise self.unexpected_token_error()
+        return ForStatement(identifier, collection, inside_statements, self.scope_context)
+
+    def set_statement(self):
+        self.accept(Lexem.SET)
+        identifier = self.current_token.content
+        self.accept(Lexem.IDENTIFIER)
+        self.accept(Lexem.ASSIGN)
+        value = self.expression()
+        self.accept(Lexem.STATEMENT_CLOSE)
+        return SetStatement(identifier, value, self.scope_context)
 
     def get_statements(self):
         statements = []
@@ -262,6 +294,7 @@ class Parser:
             elif self.current_token.id == Lexem.LEFT_SQUARE_BRACKET:
                 return self.indexing(Variable(name, self.scope_context))
             else:
+                self.accept(Lexem.WHITESPACE)
                 return Variable(name, self.scope_context)
         else:
             return self.constant()

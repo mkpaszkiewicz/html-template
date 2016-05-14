@@ -58,6 +58,7 @@ class Lexem(enum.IntEnum):
     SPACE = 44
     NEW_LINE = 44
     TAB = 44
+    WHITESPACE = 44
 
     TRUE = 45
     FALSE = 46

@@ -2,12 +2,26 @@ import io
 import unittest
 from contextlib import closing
 
-from html_template_parser.parser import parse
 from html_template_parser.error import *
+from html_template_parser.parser import parse
 
 
 class ParserTest(unittest.TestCase):
     """Parser test cases"""
+    CSV_FILE = '~parser_test_model.csv'
+
+    @classmethod
+    def setUpClass(cls):
+        with open(cls.CSV_FILE, 'w+') as f:
+            f.write('firstname,lastname,salary,age\n'
+                     'Brad,Smith,2500.00,34\n'
+                     'Will,Pitt,3000.00,42\n'
+                     'Jennifer,Polez,100.00,17\n')
+
+    @classmethod
+    def tearDownClass(cls):
+        import os
+        os.remove(cls.CSV_FILE)
 
     def test_should_generate_empty_string(self):
         with closing(io.StringIO('')) as input_stream:
@@ -185,5 +199,49 @@ class ParserTest(unittest.TestCase):
             output = parse(input_stream)
             self.assertEqual('True', output)
 
-if __name__ == '__main__':
-    unittest.main()
+    def test_should_print_results_from_if_statement(self):
+        with closing(io.StringIO('{% if True %}Hello World{% endif %}')) as input_stream:
+            output = parse(input_stream)
+            self.assertEqual('Hello World', output)
+
+    def test_should_not_print_results_from_if_statement(self):
+        with closing(io.StringIO('{% if 5 < 3 %}Hello World{% endif %}')) as input_stream:
+            output = parse(input_stream)
+            self.assertEqual('', output)
+
+    def test_should_print_results_from_else_statement(self):
+        with closing(io.StringIO('{% if False %}Hello{% else %}World{% endif %}')) as input_stream:
+            output = parse(input_stream)
+            self.assertEqual('World', output)
+
+    def test_should_print_results_from_elif_statement(self):
+        with closing(io.StringIO('{% if False %}Hello{% elif True %}World{% endif %}')) as input_stream:
+            output = parse(input_stream)
+            self.assertEqual('World', output)
+
+    def test_should_get_value_from_csv_file(self):
+        with closing(io.StringIO("{{ csv[0]['age'] }}")) as input_stream:
+            output = parse(input_stream, self.CSV_FILE)
+            self.assertEqual('34', output)
+
+    def test_should_add_values_from_csv_file(self):
+        with closing(io.StringIO("{{ csv[0]['age'] + csv[1]['age'] }}")) as input_stream:
+            output = parse(input_stream, self.CSV_FILE)
+            self.assertEqual('76', output)
+
+    def test_should_concatenate_values_from_csv_file(self):
+        with closing(io.StringIO("{{ csv[0]['firstname'] + ' ' + csv[0]['lastname'] }}")) as input_stream:
+            output = parse(input_stream, self.CSV_FILE)
+            self.assertEqual('Brad Smith', output)
+
+    def test_should_raise_exception_unknown_key(self):
+        with closing(io.StringIO("{{ csv[0]['date_of_birth'] }}")) as input_stream:
+            self.assertRaises(ParserSemanticError, parse, input_stream, self.CSV_FILE)
+
+    def test_should_accept_inverted_indexing(self):
+        with closing(io.StringIO("{{ csv[-1]['age'] }}")) as input_stream:
+            output = parse(input_stream, self.CSV_FILE)
+            self.assertEqual('17', output)
+
+    if __name__ == '__main__':
+        unittest.main()

@@ -32,6 +32,27 @@ class Constant(ParserNode):
         return self.value
 
 
+class Variable(ParserNode):
+    def __init__(self, identifier, scope_context):
+        self.identifier = identifier
+        self.scope_context = scope_context
+
+    def execute(self):
+        return self.scope_context.find(self.identifier)
+
+
+class Indexing(ParserNode):
+    def __init__(self, variable, index):
+        self.variable = variable
+        self.index = index
+
+    def execute(self):
+        try:
+            return self.variable.execute()[self.index.execute()]
+        except KeyError as exc:
+            raise ParserSemanticError('Unknown key {}'.format(exc))
+
+
 class PrintStatement(ParserNode):
     def __init__(self, expression):
         self.expression = expression
@@ -85,10 +106,10 @@ class ModuloOperator(ParserNode):
         self.operand2 = operand2
 
     def execute(self):
-        divisor = self.operand2.execute()
-        if divisor == 0:
-            raise ParserSemanticError('Division by 0')
-        return self.operand1.execute() % divisor
+        try:
+            return self.operand1.execute() % self.operand2.execute()
+        except ZeroDivisionError as exc:
+            raise ParserSemanticError(exc)
 
 
 class NotEqualOperator(ParserNode):
@@ -197,3 +218,36 @@ class InOperator(ParserNode):
             return self.operand1.execute() in self.operand2.execute()
         except TypeError as exc:
             raise ParserSemanticError(exc)
+
+
+class IfStatement(ParserNode):
+    def __init__(self, comp_expression, inside_statements, else_statement):
+        self.comp_expression = comp_expression
+        self.inside_statements = inside_statements
+        self.else_statement = else_statement
+
+    def execute(self):
+        result = ''
+        if self.comp_expression.execute():
+            for statement in self.inside_statements:
+                result += statement.execute()
+        elif self.else_statement:
+            for statement in self.else_statement:
+                result += statement.execute()
+        return result
+
+
+class ForStatement(ParserNode):
+    def __init__(self, comp_expression, inside_statements):
+        self.comp_expression = comp_expression
+        self.inside_statements = inside_statements
+
+    def execute(self):
+        result = ''
+        if self.comp_expression.execute():
+            for statement in self.inside_statements:
+                result += statement.execute()
+        elif self.else_statement:
+            for statement in self.else_statement:
+                result += statement.execute()
+        return result

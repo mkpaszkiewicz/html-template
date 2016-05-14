@@ -1,15 +1,16 @@
 from html_template_parser.action import *
 from html_template_parser.lexem import *
 from html_template_parser.tokenizer import *
+from html_template_parser.utils import *
 
 __all__ = [
     'parse'
 ]
 
 
-def parse(template, model=None):
+def parse(template, csv_model=None):
     tokenizer = Tokenizer(template)
-    parser = Parser(tokenizer, model)
+    parser = Parser(tokenizer, csv_model)
 
     tree = []
     while True:
@@ -24,17 +25,34 @@ def parse(template, model=None):
     return generated_html
 
 
+class ScopeContext:
+    def __init__(self, csv_model):
+        self.model = {'csv': []}
+        if csv_model:
+            import csv
+            with open(csv_model) as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    row = convert_strings_to_numbers(row)
+                    self.model['csv'].append(row)
+
+    def find(self, identifier):
+        return self.model[identifier]
+
+
 class Parser:
-    def __init__(self, tokenizer, model):
+    def __init__(self, tokenizer, csv_model):
         self.tokenizer = tokenizer
         self.current_token = self.tokenizer.get_next_token(omit_whitespace=True)
-        self.model = model  # TODO make table from it
+        self.scope_context = ScopeContext(csv_model)
+
+    class StatementClose(Exception):
+        def __init__(self):
+            Exception.__init__(self)
 
     def generate_tree(self):
         """Generate parse tree."""
-        if self.current_token.id == Lexem.EOI:
-            return None
-        elif self.current_token.id == Lexem.HTML:
+        if self.current_token.id == Lexem.HTML:
             return self.html_code()
         elif self.current_token.id == Lexem.STATEMENT_OPEN:
             return self.statement()
@@ -42,26 +60,30 @@ class Parser:
             return self.print()
         elif self.current_token.id == Lexem.COMMENT_OPEN:
             return self.comment()
+        elif self.current_token.id == Lexem.EOI:
+            return None
         else:
             raise self.unexpected_token_error()
 
-    def unexpected_token_error(self):
-        if self.current_token.content:
-            unexpected = self.current_token.content
-        else:
-            unexpected = keywords.get(self.current_token.id) or symbols.get(self.current_token.id)
-        return ParserSyntaxError('Unexpected "{}"'.format(unexpected), self.current_token.line, self.current_token.position)
-
-    def accept(self, token_id):
+    def accept(self, token_id, omit_whitespace=True):
         if self.current_token.id == token_id:
-            self.current_token = self.tokenizer.get_next_token(omit_whitespace=True)
+            self.current_token = self.tokenizer.get_next_token(omit_whitespace)
         else:
             expected = reverted_keywords.get(token_id) or reverted_symbols.get(token_id)
             raise ParserSyntaxError('Expected "{}"'.format(expected), self.current_token.line, self.current_token.position)
 
+    def unexpected_token_error(self):
+        if self.current_token.content:
+            unexpected = self.current_token.content
+        elif self.current_token.id == Lexem.EOI:
+            unexpected = 'EOI'
+        else:
+            unexpected = reverted_keywords.get(self.current_token.id) or reverted_symbols.get(self.current_token.id)
+        return ParserSyntaxError('Unexpected "{}"'.format(unexpected), self.current_token.line, self.current_token.position)
+
     def html_code(self):
         node = HTMLCode(self.current_token.content)
-        self.current_token = self.tokenizer.get_next_token(omit_whitespace=True)
+        self.accept(Lexem.HTML)
         return node
 
     def comment(self):
@@ -70,6 +92,54 @@ class Parser:
         self.accept(Lexem.COMMENT)
         self.accept(Lexem.COMMENT_CLOSE)
         return Comment(comment)
+
+    def statement(self):
+        self.accept(Lexem.STATEMENT_OPEN)
+        if self.current_token.id == Lexem.IF:
+            return self.if_statement()
+        elif self.current_token.id == Lexem.FOR:
+            return self.if_statement()
+        # TODO implement other statements
+        elif self.current_token.id in [Lexem.ENDIF, Lexem.ELSE, Lexem.ELIF, Lexem.ENDFOR]:
+            raise self.StatementClose()
+        else:
+            raise self.unexpected_token_error()
+
+    def if_statement(self):
+        self.accept(Lexem.IF)
+        comp_expression = self.expression()
+        self.accept(Lexem.STATEMENT_CLOSE)
+        inside_statements = self.get_statements()
+        if self.current_token.id == Lexem.ENDIF:
+            self.accept(Lexem.ENDIF)
+            self.accept(Lexem.STATEMENT_CLOSE)
+            else_statements = None
+        elif self.current_token.id == Lexem.ELSE:
+            self.accept(Lexem.ELSE)
+            self.accept(Lexem.STATEMENT_CLOSE)
+            else_statements = self.get_statements()
+            if self.current_token.id == Lexem.ENDIF:
+                self.accept(Lexem.ENDIF)
+                self.accept(Lexem.STATEMENT_CLOSE)
+            else:
+                raise self.unexpected_token_error()
+        elif self.current_token.id == Lexem.ELIF:
+            self.current_token.id = Lexem.IF
+            else_statements = [self.if_statement()]
+        else:
+            raise self.unexpected_token_error()
+        return IfStatement(comp_expression, inside_statements, else_statements)
+
+    def get_statements(self):
+        statements = []
+        while True:
+            try:
+                statement = self.generate_tree()
+                if statement is None:
+                    raise self.unexpected_token_error()
+                statements.append(statement)
+            except self.StatementClose:
+                return statements
 
     def print(self):
         self.accept(Lexem.PRINT_OPEN)
@@ -184,8 +254,15 @@ class Parser:
             self.accept(Lexem.RIGHT_BRACKET)
             return expression
         elif self.current_token.id == Lexem.IDENTIFIER:
-            # TODO do it
-            raise NotImplementedError
+            name = self.current_token.content
+            self.accept(Lexem.IDENTIFIER, omit_whitespace=False)
+            if self.current_token.id == Lexem.LEFT_BRACKET:
+                # TODO implement macro call
+                raise NotImplementedError
+            elif self.current_token.id == Lexem.LEFT_SQUARE_BRACKET:
+                return self.indexing(Variable(name, self.scope_context))
+            else:
+                return Variable(name, self.scope_context)
         else:
             return self.constant()
 
@@ -210,3 +287,12 @@ class Parser:
             return Constant(False)
         else:
             raise self.unexpected_token_error()
+
+    def indexing(self, variable):
+        self.accept(Lexem.LEFT_SQUARE_BRACKET)
+        index = self.expression()
+        self.accept(Lexem.RIGHT_SQUARE_BRACKET)
+        if self.current_token.id == Lexem.LEFT_SQUARE_BRACKET:
+            return self.indexing(Indexing(variable, index))
+        else:
+            return Indexing(variable, index)

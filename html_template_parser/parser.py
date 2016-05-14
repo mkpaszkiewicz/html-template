@@ -1,3 +1,5 @@
+import re
+
 from html_template_parser.action import *
 from html_template_parser.lexem import *
 from html_template_parser.tokenizer import *
@@ -22,7 +24,11 @@ def parse(template, csv_model=None):
     generated_html = ''
     for subtree in tree:
         generated_html += subtree.execute()
-    return generated_html
+    return filter_html(generated_html)
+
+
+def filter_html(html):
+    return '\n'.join(filter(lambda x: not re.match(r'^\s*$', x), html.split('\n')))
 
 
 class ScopeContext:
@@ -50,6 +56,7 @@ class ScopeContext:
 
     def pop(self):
         pass
+
 
 class Parser:
     def __init__(self, tokenizer, csv_model):

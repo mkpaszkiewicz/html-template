@@ -156,7 +156,7 @@ class Tokenizer:
     def _get_keyword_or_identifier_token(self, quotation):
         char = self._get_next_char()
         string = quotation
-        while not self.is_end() and (char.isdigit() or char.isalpha()):
+        while not self.is_end() and (char.isdigit() or char.isalpha() or char is '_'):
             string += char
             char = self._get_next_char()
         if char.isdigit() or char.isalpha():

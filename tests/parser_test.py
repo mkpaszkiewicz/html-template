@@ -257,5 +257,11 @@ class ParserTest(unittest.TestCase):
             output = parse(input_stream, self.CSV_FILE)
             self.assertEqual('Brad Will Jennifer ', output)
 
+    def test_should_print_macro_content(self):
+        with closing(io.StringIO("{% macro name(firstname, lastname) %}{{ firstname }} {{ lastname }}{% endmacro %}"
+                                 "{{name('Jon', 'Smith')}}")) as input_stream:
+            output = parse(input_stream, self.CSV_FILE)
+            self.assertEqual('Jon Smith', output)
+
     if __name__ == '__main__':
         unittest.main()

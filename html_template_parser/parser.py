@@ -45,6 +45,11 @@ class ScopeContext:
     def add(self, identifier, value):
         self.model[identifier] = value
 
+    def push(self):
+        pass
+
+    def pop(self):
+        pass
 
 class Parser:
     def __init__(self, tokenizer, csv_model):
@@ -107,8 +112,9 @@ class Parser:
             return self.for_statement()
         elif self.current_token.id == Lexem.SET:
             return self.set_statement()
-        # TODO implement other statements
-        elif self.current_token.id in [Lexem.ENDIF, Lexem.ELSE, Lexem.ELIF, Lexem.ENDFOR]:
+        elif self.current_token.id == Lexem.MACRO:
+            return self.macro_statement()
+        elif self.current_token.id in [Lexem.ENDIF, Lexem.ELSE, Lexem.ELIF, Lexem.ENDFOR, Lexem.ENDMACRO]:
             raise self.StatementClose()
         else:
             raise self.unexpected_token_error()
@@ -161,6 +167,20 @@ class Parser:
         value = self.expression()
         self.accept(Lexem.STATEMENT_CLOSE)
         return SetStatement(identifier, value, self.scope_context)
+
+    def macro_statement(self):
+        self.accept(Lexem.MACRO)
+        identifier = self.current_token.content
+        self.accept(Lexem.IDENTIFIER, omit_whitespace=False)
+        args = self.arguments(declaration=True)
+        self.accept(Lexem.STATEMENT_CLOSE)
+        inside_statements = self.get_statements()
+        if self.current_token.id == Lexem.ENDMACRO:
+            self.accept(Lexem.ENDMACRO)
+            self.accept(Lexem.STATEMENT_CLOSE)
+        else:
+            raise self.unexpected_token_error()
+        return MacroStatement(identifier, args, inside_statements, self.scope_context)
 
     def get_statements(self):
         statements = []
@@ -289,8 +309,7 @@ class Parser:
             name = self.current_token.content
             self.accept(Lexem.IDENTIFIER, omit_whitespace=False)
             if self.current_token.id == Lexem.LEFT_BRACKET:
-                # TODO implement macro call
-                raise NotImplementedError
+                return MacroCall(name, self.scope_context, self.arguments())
             elif self.current_token.id == Lexem.LEFT_SQUARE_BRACKET:
                 return self.indexing(Variable(name, self.scope_context))
             else:
@@ -329,3 +348,20 @@ class Parser:
             return self.indexing(Indexing(variable, index))
         else:
             return Indexing(variable, index)
+
+    def arguments(self, declaration=False):
+        self.accept(Lexem.LEFT_BRACKET)
+        args = []
+        while True:
+            if self.current_token.id == Lexem.RIGHT_BRACKET:
+                self.accept(Lexem.RIGHT_BRACKET)
+                return args
+            elif declaration:
+                arg = self.current_token.content
+                self.accept(Lexem.IDENTIFIER)
+                args.append(arg)
+            else:
+                arg = self.expression()
+                args.append(arg)
+            if self.current_token.id != Lexem.RIGHT_BRACKET:
+                self.accept(Lexem.COMMA)

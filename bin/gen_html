@@ -15,14 +15,16 @@ def parse_arguments():
 
 def main():
     args = parse_arguments()
-    parser = Parser()
     try:
-        output = parser.parse(args.csv, args.template)
-    except ParserException as exc:
+        output = parse(args.template, args.csv)
+        if args.output:
+            with open(args.output, 'w') as file:
+                file.write(output)
+        else:
+            print(output)
+    except ParserError as exc:
         print(exc)
-    else:
-        with open(args.output, 'w') as file:
-            file.write(output)
+
 
 if __name__ == '__main__':
     main()

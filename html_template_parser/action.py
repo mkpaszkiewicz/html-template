@@ -262,3 +262,33 @@ class SetStatement(ParserNode):
     def execute(self):
         self.scope_context.add(self.identifier, self.value.execute())
         return ''
+
+
+class MacroStatement(ParserNode):
+    def __init__(self, identifier, args_name, inside_statements, scope_context):
+        self.identifier = identifier
+        self.args_name = args_name
+        self.inside_statements = inside_statements
+        self.scope_context = scope_context
+
+    def execute(self):
+        self.scope_context.add(self.identifier, self)
+        return ''
+
+    def __call__(self, *args, **kwargs):
+        for i, arg_name in enumerate(self.args_name):
+            self.scope_context.add(arg_name, args[0][i].execute())
+        result = ''
+        for statement in self.inside_statements:
+            result += statement.execute()
+        return result
+
+
+class MacroCall(ParserNode):
+    def __init__(self, identifier, scope_context, *args):
+        self.identifier = identifier
+        self.args = args
+        self.scope_context = scope_context
+
+    def execute(self):
+        return self.scope_context.find(self.identifier)(*self.args)

@@ -33,29 +33,31 @@ def filter_html(html):
 
 class ScopeContext:
     def __init__(self, csv_model):
-        self.model = {'csv': []}
+        self.model = [{'csv': []}]
         if csv_model:
             import csv
             with open(csv_model) as f:
                 reader = csv.DictReader(f)
                 for row in reader:
                     row = convert_strings_to_numbers(row)
-                    self.model['csv'].append(row)
+                    self.model[0]['csv'].append(row)
 
     def find(self, identifier):
-        try:
-            return self.model[identifier]
-        except KeyError:
+            for level in reversed(self.model):
+                try:
+                    return level[identifier]
+                except KeyError:
+                    pass
             raise ParserSemanticError('Unknown identifier \'{}\''.format(identifier))
 
     def add(self, identifier, value):
-        self.model[identifier] = value
+        self.model[-1][identifier] = value
 
     def push(self):
-        pass
+        self.model.append({})
 
     def pop(self):
-        pass
+        self.model.pop()
 
 
 class Parser:
@@ -149,7 +151,7 @@ class Parser:
             else_statements = [self.if_statement()]
         else:
             raise self.unexpected_token_error()
-        return IfStatement(comp_expression, inside_statements, else_statements)
+        return IfStatement(comp_expression, inside_statements, else_statements, self.scope_context)
 
     def for_statement(self):
         self.accept(Lexem.FOR)

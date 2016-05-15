@@ -2,6 +2,15 @@ import abc
 from html_template_parser.error import *
 
 
+def push_stack(func):
+    def func_wrapper(*args):
+        args[0].scope_context.push()
+        result = func(*args)
+        args[0].scope_context.pop()
+        return result
+    return func_wrapper
+
+
 class ParserNode:
     @abc.abstractmethod
     def execute(self):
@@ -221,11 +230,13 @@ class InOperator(ParserNode):
 
 
 class IfStatement(ParserNode):
-    def __init__(self, comp_expression, inside_statements, else_statement):
+    def __init__(self, comp_expression, inside_statements, else_statement, scope_context):
         self.comp_expression = comp_expression
         self.inside_statements = inside_statements
         self.else_statement = else_statement
+        self.scope_context = scope_context
 
+    @push_stack
     def execute(self):
         result = ''
         if self.comp_expression.execute():
@@ -244,6 +255,7 @@ class ForStatement(ParserNode):
         self.inside_statements = inside_statements
         self.scope_context = scope_context
 
+    @push_stack
     def execute(self):
         result = ''
         for element in self.collection.execute():
@@ -275,6 +287,7 @@ class MacroStatement(ParserNode):
         self.scope_context.add(self.identifier, self)
         return ''
 
+    @push_stack
     def __call__(self, *args, **kwargs):
         for i, arg_name in enumerate(self.args_name):
             self.scope_context.add(arg_name, args[0][i].execute())

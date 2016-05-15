@@ -263,5 +263,15 @@ class ParserTest(unittest.TestCase):
             output = parse(input_stream, self.CSV_FILE)
             self.assertEqual('Jon Smith', output)
 
+    def test_should_print_value_from_local_scope(self):
+        with closing(io.StringIO("{% set firstname = 'Adam' %}"
+                                 "{% macro name(firstname) %}"
+                                 "{{ firstname }}"
+                                 "{% endmacro %}"
+                                 "{{ name('Tom') }} "
+                                 "{{ firstname }}")) as input_stream:
+            output = parse(input_stream, self.CSV_FILE)
+            self.assertEqual('Tom Adam', output)
+
     if __name__ == '__main__':
         unittest.main()

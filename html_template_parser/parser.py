@@ -23,7 +23,12 @@ def parse(template, csv_model=None):
 
     generated_html = ''
     for subtree in tree:
-        generated_html += subtree.execute()
+        try:
+            generated_html += subtree.execute()
+        except (TypeError, ZeroDivisionError) as exc:
+            raise ParserSemanticError(exc)
+        except KeyError as exc:
+            raise ParserSemanticError('Unknown key {}'.format(exc))
     return filter_html(generated_html)
 
 

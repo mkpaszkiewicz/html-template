@@ -56,10 +56,7 @@ class Indexing(ParserNode):
         self.index = index
 
     def execute(self):
-        try:
-            return self.variable.execute()[self.index.execute()]
-        except KeyError as exc:
-            raise ParserSemanticError('Unknown key {}'.format(exc))
+        return self.variable.execute()[self.index.execute()]
 
 
 class PrintStatement(ParserNode):
@@ -103,10 +100,7 @@ class DivisionOperator(ParserNode):
         self.operand2 = operand2
 
     def execute(self):
-        try:
-            return self.operand1.execute() / self.operand2.execute()
-        except ZeroDivisionError as exc:
-            raise ParserSemanticError(exc)
+        return self.operand1.execute() / self.operand2.execute()
 
 
 class ModuloOperator(ParserNode):
@@ -115,10 +109,7 @@ class ModuloOperator(ParserNode):
         self.operand2 = operand2
 
     def execute(self):
-        try:
-            return self.operand1.execute() % self.operand2.execute()
-        except ZeroDivisionError as exc:
-            raise ParserSemanticError(exc)
+        return self.operand1.execute() % self.operand2.execute()
 
 
 class NotEqualOperator(ParserNode):
@@ -223,10 +214,7 @@ class InOperator(ParserNode):
         self.operand2 = operand2
 
     def execute(self):
-        try:
-            return self.operand1.execute() in self.operand2.execute()
-        except TypeError as exc:
-            raise ParserSemanticError(exc)
+        return self.operand1.execute() in self.operand2.execute()
 
 
 class IfStatement(ParserNode):

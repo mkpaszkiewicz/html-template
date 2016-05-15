@@ -36,7 +36,7 @@ Jennifer, Polez, 100.00, 17
     {% endfor %}
     </ul>
     <h1>My Webpage</h1>
-    </span>{{ csv[1].age + csv[2].age }}</span>
+    <span>{{ csv[1].age + csv[2].age }}</span>
 
     {# a comment #}
 </body>

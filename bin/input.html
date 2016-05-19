@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>My Webpage</title>
+</head>
+<body>
+    {% macro name_li(firstname, lastname) %}
+    {% set var= 'Names:' %}
+        <li>{{ var }} {{ firstname }} {{ lastname }}</li>
+    {% endmacro %}
+    {% set var = 'Names' %}
+    <span>{{ var }}</span>
+    <ul id="names">
+        {% for row in model %}
+            {% if row['age'] > 18 %}
+                {{ name_li(row['firstname'], row['lastname']) }}
+            {% else %}
+                {{ row['age'] }}
+            {% endif %}
+        {% endfor %}
+    </ul>
+    <h1>My Webpage</h1>
+    <span>{{ model[1]['age'] + model[2]['age'] }}</span>
+    {# a comment #}
+</body>
+</html>

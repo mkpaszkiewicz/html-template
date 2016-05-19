@@ -1,5 +1,4 @@
 import abc
-from html_template_parser.error import *
 
 
 def push_stack(func):

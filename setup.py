@@ -7,5 +7,6 @@ setup(name='html-template-parser',
       description='CSV to HTML template parser',
       packages=['html_template_parser', 'tests'],
       install_requires=[
+          'PyYAML'
       ]
       )

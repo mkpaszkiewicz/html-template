@@ -1,0 +1,15 @@
+model:
+    - firstname:  Brad
+      lastname:   Smith
+      salary:     2500.00
+      age:        34
+
+    - firstname:  Will
+      lastname:   Pitt
+      salary:     3000.00
+      age:        42
+
+    - firstname:  Jennifer
+      lastname:   Polez
+      salary:     100.00
+      age:        17

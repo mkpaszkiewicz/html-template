@@ -8,11 +8,11 @@ from html_template_parser.parser import parse
 
 class ParserTest(unittest.TestCase):
     """Parser test cases"""
-    CSV_FILE = '~parser_test_model.csv'
+    MODEL_FILE = '~parser_test_model.csv'
 
     @classmethod
     def setUpClass(cls):
-        with open(cls.CSV_FILE, 'w+') as f:
+        with open(cls.MODEL_FILE, 'w+') as f:
             f.write('firstname,lastname,salary,age\n'
                     'Brad,Smith,2500.00,34\n'
                     'Will,Pitt,3000.00,42\n'
@@ -21,7 +21,7 @@ class ParserTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         import os
-        os.remove(cls.CSV_FILE)
+        os.remove(cls.MODEL_FILE)
 
     def test_should_generate_empty_string(self):
         with closing(io.StringIO('')) as input_stream:
@@ -219,7 +219,7 @@ class ParserTest(unittest.TestCase):
             output = parse(input_stream)
             self.assertEqual('World', output)
 
-    def test_should_print_value_define_in_set_statement(self):
+    def test_should_print_value_defined_in_set_statement(self):
         with closing(io.StringIO("{% set value = 123 %}{{ value }}")) as input_stream:
             output = parse(input_stream)
             self.assertEqual('123', output)
@@ -229,38 +229,38 @@ class ParserTest(unittest.TestCase):
             self.assertRaises(ParserSemanticError, parse, input_stream)
 
     def test_should_get_value_from_csv_file(self):
-        with closing(io.StringIO("{{ csv[0]['age'] }}")) as input_stream:
-            output = parse(input_stream, self.CSV_FILE)
+        with closing(io.StringIO("{{ model[0]['age'] }}")) as input_stream:
+            output = parse(input_stream, self.MODEL_FILE)
             self.assertEqual('34', output)
 
     def test_should_add_values_from_csv_file(self):
-        with closing(io.StringIO("{{ csv[0]['age'] + csv[1]['age'] }}")) as input_stream:
-            output = parse(input_stream, self.CSV_FILE)
+        with closing(io.StringIO("{{ model[0]['age'] + model[1]['age'] }}")) as input_stream:
+            output = parse(input_stream, self.MODEL_FILE)
             self.assertEqual('76', output)
 
     def test_should_concatenate_values_from_csv_file(self):
-        with closing(io.StringIO("{{ csv[0]['firstname'] + ' ' + csv[0]['lastname'] }}")) as input_stream:
-            output = parse(input_stream, self.CSV_FILE)
+        with closing(io.StringIO("{{ model[0]['firstname'] + ' ' + model[0]['lastname'] }}")) as input_stream:
+            output = parse(input_stream, self.MODEL_FILE)
             self.assertEqual('Brad Smith', output)
 
     def test_should_raise_exception_unknown_key(self):
-        with closing(io.StringIO("{{ csv[0]['date_of_birth'] }}")) as input_stream:
-            self.assertRaises(ParserSemanticError, parse, input_stream, self.CSV_FILE)
+        with closing(io.StringIO("{{ model[0]['date_of_birth'] }}")) as input_stream:
+            self.assertRaises(ParserSemanticError, parse, input_stream, self.MODEL_FILE)
 
     def test_should_accept_inverted_indexing(self):
-        with closing(io.StringIO("{{ csv[-1]['age'] }}")) as input_stream:
-            output = parse(input_stream, self.CSV_FILE)
+        with closing(io.StringIO("{{ model[-1]['age'] }}")) as input_stream:
+            output = parse(input_stream, self.MODEL_FILE)
             self.assertEqual('17', output)
 
     def test_should_print_values_from_csv_file_in_a_loop(self):
-        with closing(io.StringIO("{% for value in csv %}{{ value['firstname'] + ' ' }}{% endfor %}")) as input_stream:
-            output = parse(input_stream, self.CSV_FILE)
+        with closing(io.StringIO("{% for value in model %}{{ value['firstname'] + ' ' }}{% endfor %}")) as input_stream:
+            output = parse(input_stream, self.MODEL_FILE)
             self.assertEqual('Brad Will Jennifer ', output)
 
     def test_should_print_macro_content(self):
         with closing(io.StringIO("{% macro name(firstname, lastname) %}{{ firstname }} {{ lastname }}{% endmacro %}"
                                  "{{name('Jon', 'Smith')}}")) as input_stream:
-            output = parse(input_stream, self.CSV_FILE)
+            output = parse(input_stream, self.MODEL_FILE)
             self.assertEqual('Jon Smith', output)
 
     def test_should_print_value_from_local_scope(self):
@@ -270,7 +270,7 @@ class ParserTest(unittest.TestCase):
                                  "{% endmacro %}"
                                  "{{ name('Tom') }} "
                                  "{{ firstname }}")) as input_stream:
-            output = parse(input_stream, self.CSV_FILE)
+            output = parse(input_stream, self.MODEL_FILE)
             self.assertEqual('Tom Adam', output)
 
     if __name__ == '__main__':

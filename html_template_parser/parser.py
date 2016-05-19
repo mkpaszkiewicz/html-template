@@ -1,6 +1,7 @@
 import re
 
 from html_template_parser.action import *
+from html_template_parser.error import *
 from html_template_parser.lexem import *
 from html_template_parser.tokenizer import *
 from html_template_parser.utils import *
@@ -10,9 +11,9 @@ __all__ = [
 ]
 
 
-def parse(template, csv_model=None):
+def parse(template, data=None, format='csv'):
     tokenizer = Tokenizer(template)
-    parser = Parser(tokenizer, csv_model)
+    parser = Parser(tokenizer, data, format)
 
     tree = []
     while True:
@@ -37,15 +38,29 @@ def filter_html(html):
 
 
 class ScopeContext:
-    def __init__(self, csv_model):
-        self.model = [{'csv': []}]
-        if csv_model:
+    def __init__(self, model=None, format='csv'):
+        self.model = [{'model': []}]
+        if model:
+            self._load_model(model, format)
+
+    def _load_model(self, model, format):
+        if format is 'csv':
             import csv
-            with open(csv_model) as f:
+            with open(model) as f:
                 reader = csv.DictReader(f)
                 for row in reader:
                     row = convert_strings_to_numbers(row)
-                    self.model[0]['csv'].append(row)
+                    self.model[0]['model'].append(row)
+        elif format is 'json':
+            with open(model) as f:
+                import json
+                self.model.append(json.load(f))
+        elif format is 'yaml':
+            with open(model) as f:
+                import yaml
+                self.model.append(yaml.load(f))
+        else:
+            raise ParserArgumentError('Invalid argument value \'{}\''.format(format))
 
     def find(self, identifier):
             for level in reversed(self.model):
@@ -66,10 +81,10 @@ class ScopeContext:
 
 
 class Parser:
-    def __init__(self, tokenizer, csv_model):
+    def __init__(self, tokenizer, model, format):
         self.tokenizer = tokenizer
         self.current_token = self.tokenizer.get_next_token(omit_whitespace=True)
-        self.scope_context = ScopeContext(csv_model)
+        self.scope_context = ScopeContext(model, format)
 
     class StatementClose(Exception):
         def __init__(self):

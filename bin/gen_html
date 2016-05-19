@@ -5,10 +5,13 @@ from html_template_parser import *
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description='Generates HTML from template and CSV file', formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('-c', '--csv', type=str, metavar='PATH', required=True, help='indicates path where CSV file, containing model, is located')
-    parser.add_argument('-t', '--template', type=str, metavar='PATH', required=True, help='indicates path where template file is located')
-    parser.add_argument('-o', '--output', type=str, metavar='PATH', default='output.html', help='indicates output file (default output.html)')
+    parser = argparse.ArgumentParser(description='Generates HTML from template and CSV file')
+    data_format = parser.add_mutually_exclusive_group(required=True)
+    data_format.add_argument('-c', '--csv', type=str, metavar='CSV', help='indicates path where .csv file containing model is located')
+    data_format.add_argument('-j', '--json', type=str, metavar='JSON', help='indicates path where .json file containing model is located')
+    data_format.add_argument('-y', '--yaml', type=str, metavar='YAML', help='indicates path where .yaml file containing model is located')
+    parser.add_argument('-t', '--template', type=str, metavar='TEMPLATE', required=True, help='indicates path where template file is located')
+    parser.add_argument('-o', '--output', type=str, metavar='OUTPUT', help='indicates output file')
     args = parser.parse_args()
     return args
 
@@ -17,14 +20,20 @@ def main():
     args = parse_arguments()
     try:
         with open(args.template, 'r') as file:
-            output = parse(file, args.csv)
+            if args.csv:
+                output = parse(file, args.csv, format='csv')
+            elif args.json:
+                output = parse(file, args.json, format='json')
+            else:
+                output = parse(file, args.yaml, format='yaml')
+    except (ParserError, Exception) as exc:
+        print(exc)
+    else:
         if args.output:
             with open(args.output, 'w') as file:
                 file.write(output)
         else:
             print(output)
-    except ParserError as exc:
-        print(exc)
 
 
 if __name__ == '__main__':

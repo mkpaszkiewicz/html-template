@@ -1,7 +1,8 @@
 __all__ = [
     'ParserError',
     'ParserSyntaxError',
-    'ParserSemanticError'
+    'ParserSemanticError',
+    'ParserArgumentError'
 ]
 
 
@@ -32,6 +33,13 @@ class ParserSyntaxError(ParserError):
 
 class ParserSemanticError(ParserError):
     """Raised when dividing by 0"""
+
+    def __init__(self, msg):
+        ParserError.__init__(self, msg)
+
+
+class ParserArgumentError(ParserError):
+    """Raised when got invalid argument"""
 
     def __init__(self, msg):
         ParserError.__init__(self, msg)

@@ -4,32 +4,19 @@ from html_template_parser.action import *
 from html_template_parser.error import *
 from html_template_parser.lexem import *
 from html_template_parser.tokenizer import *
-from html_template_parser.utils import *
 
 __all__ = [
     'parse'
 ]
 
 
-def parse(template, data=None, format='csv'):
+def parse(template, model=None, format='csv'):
     tokenizer = Tokenizer(template)
-    parser = Parser(tokenizer, data, format)
+    parser = Parser(tokenizer)
+    scope_context = ScopeContext(model, format)
 
-    tree = []
-    while True:
-        subtree = parser.generate_tree()
-        if subtree is None:
-            break
-        tree.append(subtree)
-
-    generated_html = ''
-    for subtree in tree:
-        try:
-            generated_html += subtree.execute()
-        except (TypeError, ZeroDivisionError) as exc:
-            raise ParserSemanticError(exc)
-        except KeyError as exc:
-            raise ParserSemanticError('Unknown key {}'.format(exc))
+    tree = parser.generete_tree()
+    generated_html = tree.execute(scope_context)
     return filter_html(generated_html)
 
 
@@ -37,77 +24,38 @@ def filter_html(html):
     return '\n'.join(filter(lambda x: not re.match(r'^\s*$', x), html.split('\n')))
 
 
-class ScopeContext:
-    def __init__(self, model=None, format='csv'):
-        self.model = [{'model': []}]
-        if model:
-            self._load_model(model, format)
-
-    def _load_model(self, model, format):
-        if format is 'csv':
-            import csv
-            with open(model) as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    row = convert_strings_to_numbers(row)
-                    self.model[0]['model'].append(row)
-        elif format is 'json':
-            with open(model) as f:
-                import json
-                self.model.append(json.load(f))
-        elif format is 'yaml':
-            with open(model) as f:
-                import yaml
-                self.model.append(yaml.load(f))
-        else:
-            raise ParserArgumentError('Invalid argument value \'{}\''.format(format))
-
-    def find(self, identifier):
-            for level in reversed(self.model):
-                try:
-                    return level[identifier]
-                except KeyError:
-                    pass
-            raise ParserSemanticError('Unknown identifier \'{}\''.format(identifier))
-
-    def add(self, identifier, value):
-        self.model[-1][identifier] = value
-
-    def push(self):
-        self.model.append({})
-
-    def pop(self):
-        self.model.pop()
-
-
 class Parser:
-    def __init__(self, tokenizer, model, format):
+    def __init__(self, tokenizer):
         self.tokenizer = tokenizer
-        self.current_token = self.tokenizer.get_next_token(omit_whitespace=True)
-        self.scope_context = ScopeContext(model, format)
+        self.current_token = self.tokenizer.get_next_token()
 
     class StatementClose(Exception):
         def __init__(self):
             Exception.__init__(self)
 
-    def generate_tree(self):
-        """Generate parse tree."""
+    def generete_tree(self):
+        subtrees = []
+        subtree = self.generate_node()
+        while subtree:
+            subtrees.append(subtree)
+            subtree = self.generate_node()
+        return RootNode(subtrees)
+
+    def generate_node(self):
         if self.current_token.id == Lexem.HTML:
             return self.html_code()
         elif self.current_token.id == Lexem.STATEMENT_OPEN:
             return self.statement()
         elif self.current_token.id == Lexem.PRINT_OPEN:
             return self.print()
-        elif self.current_token.id == Lexem.COMMENT_OPEN:
-            return self.comment()
         elif self.current_token.id == Lexem.EOI:
             return None
         else:
             raise self.unexpected_token_error()
 
-    def accept(self, token_id, omit_whitespace=True):
+    def accept(self, token_id):
         if self.current_token.id == token_id:
-            self.current_token = self.tokenizer.get_next_token(omit_whitespace)
+            self.current_token = self.tokenizer.get_next_token()
         else:
             expected = reverted_keywords.get(token_id) or reverted_symbols.get(token_id)
             raise ParserSyntaxError('Expected "{}"'.format(expected), self.current_token.line, self.current_token.position)
@@ -125,13 +73,6 @@ class Parser:
         node = HTMLCode(self.current_token.content)
         self.accept(Lexem.HTML)
         return node
-
-    def comment(self):
-        self.accept(Lexem.COMMENT_OPEN)
-        comment = self.current_token.content
-        self.accept(Lexem.COMMENT)
-        self.accept(Lexem.COMMENT_CLOSE)
-        return Comment(comment)
 
     def statement(self):
         self.accept(Lexem.STATEMENT_OPEN)
@@ -171,7 +112,7 @@ class Parser:
             else_statements = [self.if_statement()]
         else:
             raise self.unexpected_token_error()
-        return IfStatement(comp_expression, inside_statements, else_statements, self.scope_context)
+        return IfStatement(comp_expression, inside_statements, else_statements)
 
     def for_statement(self):
         self.accept(Lexem.FOR)
@@ -186,7 +127,7 @@ class Parser:
             self.accept(Lexem.STATEMENT_CLOSE)
         else:
             raise self.unexpected_token_error()
-        return ForStatement(identifier, collection, inside_statements, self.scope_context)
+        return ForStatement(identifier, collection, inside_statements)
 
     def set_statement(self):
         self.accept(Lexem.SET)
@@ -195,12 +136,12 @@ class Parser:
         self.accept(Lexem.ASSIGN)
         value = self.expression()
         self.accept(Lexem.STATEMENT_CLOSE)
-        return SetStatement(identifier, value, self.scope_context)
+        return SetStatement(identifier, value)
 
     def macro_statement(self):
         self.accept(Lexem.MACRO)
         identifier = self.current_token.content
-        self.accept(Lexem.IDENTIFIER, omit_whitespace=False)
+        self.accept(Lexem.IDENTIFIER)
         args = self.arguments(declaration=True)
         self.accept(Lexem.STATEMENT_CLOSE)
         inside_statements = self.get_statements()
@@ -209,13 +150,13 @@ class Parser:
             self.accept(Lexem.STATEMENT_CLOSE)
         else:
             raise self.unexpected_token_error()
-        return MacroStatement(identifier, args, inside_statements, self.scope_context)
+        return MacroStatement(identifier, args, inside_statements)
 
     def get_statements(self):
         statements = []
         while True:
             try:
-                statement = self.generate_tree()
+                statement = self.generate_node()
                 if statement is None:
                     raise self.unexpected_token_error()
                 statements.append(statement)
@@ -336,14 +277,13 @@ class Parser:
             return expression
         elif self.current_token.id == Lexem.IDENTIFIER:
             name = self.current_token.content
-            self.accept(Lexem.IDENTIFIER, omit_whitespace=False)
+            self.accept(Lexem.IDENTIFIER)
             if self.current_token.id == Lexem.LEFT_BRACKET:
-                return MacroCall(name, self.scope_context, self.arguments())
+                return MacroCall(name, self.arguments())
             elif self.current_token.id == Lexem.LEFT_SQUARE_BRACKET:
-                return self.indexing(Variable(name, self.scope_context))
+                return self.indexing(Variable(name))
             else:
-                self.accept(Lexem.WHITESPACE)
-                return Variable(name, self.scope_context)
+                return Variable(name)
         else:
             return self.constant()
 

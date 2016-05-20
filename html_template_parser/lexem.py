@@ -52,16 +52,10 @@ class Lexem(enum.IntEnum):
     COMMENT_OPEN = 40
     COMMENT_CLOSE = 41
 
-    COMMENT = 42
-    HTML = 43
+    HTML = 42
 
-    SPACE = 44
-    NEW_LINE = 44
-    TAB = 44
-    WHITESPACE = 44
-
-    TRUE = 45
-    FALSE = 46
+    TRUE = 43
+    FALSE = 44
 
 
 keywords = {
@@ -114,10 +108,6 @@ symbols = {
     '}}': Lexem.PRINT_CLOSE,
     '{#': Lexem.COMMENT_OPEN,
     '#}': Lexem.COMMENT_CLOSE,
-
-    ' ': Lexem.SPACE,
-    '\n': Lexem.NEW_LINE,
-    '\t': Lexem.TAB
 }
 
 reverted_symbols = dict(zip(symbols.values(), symbols.keys()))

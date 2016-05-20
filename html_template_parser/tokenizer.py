@@ -32,18 +32,17 @@ class Tokenizer:
     def __init__(self, input_stream):
         self._source_controller = SourceController(input_stream)
         self._is_template = False
-        self._is_comment = False
         self._template_end_token_id = None
         self._read_source = ''
 
-    def get_tokens(self, omit_whitespace=False):
-        """Token generator. Can omit whitespaces if argument whitespace is False"""
-        token = self.get_next_token(omit_whitespace)
+    def get_tokens(self):
+        """Token generator"""
+        token = self.get_next_token()
         while token.id is not Lexem.EOI:
             yield token
-            token = self.get_next_token(omit_whitespace)
+            token = self.get_next_token()
 
-    def get_next_token(self, omit_whitespace=False):
+    def get_next_token(self):
         if self.is_end():
             line, position = self.get_current_position()
             return Token(Lexem.EOI, line=line, position=position)
@@ -54,12 +53,9 @@ class Tokenizer:
         else:
             token = self._get_html_token()
 
-        if omit_whitespace and is_whitespace(token):
-            return self.get_next_token(omit_whitespace)
-        else:
-            token.line = line
-            token.position = position
-            return token
+        token.line = line
+        token.position = position
+        return token
 
     def is_end(self):
         return bool(not self._read_source and not self._source_controller.has_char())
@@ -97,11 +93,10 @@ class Tokenizer:
             return Token(Lexem.HTML, content)
 
     def _get_template_token(self):
-        if self._is_comment:
-            self._is_comment = False
-            return self._get_comment()
-
         content = self._get_next_char()
+        while content.isspace():
+            content = self._get_next_char()
+
         if content.isdigit():
             return self._get_number_token(content)
         elif content == "'" or content == '"':
@@ -114,7 +109,8 @@ class Tokenizer:
         content += self._get_next_char()
         if content in symbols:
             if symbols[content] == Lexem.COMMENT_OPEN:
-                self._is_comment = True
+                self._omit_comment()
+                return self.get_next_token()
             elif symbols[content] == self._template_end_token_id:
                 self._is_template = False
                 self._template_end_token_id = None
@@ -169,16 +165,11 @@ class Tokenizer:
         else:
             return Token(Lexem.IDENTIFIER, string)
 
-    def _get_comment(self):
+    def _omit_comment(self):
         comment = ''
         while not self.is_end() and comment[-2:] != '#}':
             comment += self._get_next_char()
-        if comment[-2:] == '#}':
-            self._read_source = comment[-2:] + self._read_source
-            self._is_comment = False
-            return Token(Lexem.COMMENT, comment[:-2])
-        else:
-            return Token(Lexem.COMMENT, comment)
+        self._is_template = False
 
     def _is_template_opener_in(self, source):
         return source[-2:] in ['{%', '{{', '{#']

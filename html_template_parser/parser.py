@@ -173,7 +173,6 @@ class Parser:
         line, position = self.current_token.get_position()
         expression = self.or_expression()
         expression.line = line
-        expression.position = position
         return expression
 
     def or_expression(self):

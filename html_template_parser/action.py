@@ -79,16 +79,8 @@ class RootNode(ParserNode):
     def do_execute(self, scope_context):
         generated_html = ''
         for subtree in self.subtrees:
-            generated_html += subtree.execute(scope_context)
+            generated_html += subtree.do_execute(scope_context)
         return generated_html
-
-
-class HTMLCode(ParserNode):
-    def __init__(self, html):
-        self.html = html
-
-    def do_execute(self, scope_context):
-        return self.html
 
 
 class Constant(ParserNode):
@@ -113,15 +105,7 @@ class Indexing(ParserNode):
         self.index = index
 
     def do_execute(self, scope_context):
-        return self.variable.execute(scope_context)[self.index.execute(scope_context)]
-
-
-class PrintStatement(ParserNode):
-    def __init__(self, expression):
-        self.expression = expression
-
-    def do_execute(self, scope_context):
-        return str(self.expression.execute(scope_context))
+        return self.variable.do_execute(scope_context)[self.index.do_execute(scope_context)]
 
 
 class AdditionOperator(ParserNode):
@@ -130,7 +114,7 @@ class AdditionOperator(ParserNode):
         self.operand2 = operand2
 
     def do_execute(self, scope_context):
-        return self.operand1.execute(scope_context) + self.operand2.execute(scope_context)
+        return self.operand1.do_execute(scope_context) + self.operand2.do_execute(scope_context)
 
 
 class SubtractionOperator(ParserNode):
@@ -139,7 +123,7 @@ class SubtractionOperator(ParserNode):
         self.operand2 = operand2
 
     def do_execute(self, scope_context):
-        return self.operand1.execute(scope_context) - self.operand2.execute(scope_context)
+        return self.operand1.do_execute(scope_context) - self.operand2.do_execute(scope_context)
 
 
 class MultiplicationOperator(ParserNode):
@@ -148,7 +132,7 @@ class MultiplicationOperator(ParserNode):
         self.operand2 = operand2
 
     def do_execute(self, scope_context):
-        return self.operand1.execute(scope_context) * self.operand2.execute(scope_context)
+        return self.operand1.do_execute(scope_context) * self.operand2.do_execute(scope_context)
 
 
 class DivisionOperator(ParserNode):
@@ -157,7 +141,7 @@ class DivisionOperator(ParserNode):
         self.operand2 = operand2
 
     def do_execute(self, scope_context):
-        return self.operand1.execute(scope_context) / self.operand2.execute(scope_context)
+        return self.operand1.do_execute(scope_context) / self.operand2.do_execute(scope_context)
 
 
 class ModuloOperator(ParserNode):
@@ -166,7 +150,7 @@ class ModuloOperator(ParserNode):
         self.operand2 = operand2
 
     def do_execute(self, scope_context):
-        return self.operand1.execute(scope_context) % self.operand2.execute(scope_context)
+        return self.operand1.do_execute(scope_context) % self.operand2.do_execute(scope_context)
 
 
 class NotEqualOperator(ParserNode):
@@ -175,7 +159,7 @@ class NotEqualOperator(ParserNode):
         self.operand2 = operand2
 
     def do_execute(self, scope_context):
-        return self.operand1.execute(scope_context) != self.operand2.execute(scope_context)
+        return self.operand1.do_execute(scope_context) != self.operand2.do_execute(scope_context)
 
 
 class EqualOperator(ParserNode):
@@ -184,7 +168,7 @@ class EqualOperator(ParserNode):
         self.operand2 = operand2
 
     def do_execute(self, scope_context):
-        return self.operand1.execute(scope_context) == self.operand2.execute(scope_context)
+        return self.operand1.do_execute(scope_context) == self.operand2.do_execute(scope_context)
 
 
 class LowerOrEqualOperator(ParserNode):
@@ -193,7 +177,7 @@ class LowerOrEqualOperator(ParserNode):
         self.operand2 = operand2
 
     def do_execute(self, scope_context):
-        return self.operand1.execute(scope_context) <= self.operand2.execute(scope_context)
+        return self.operand1.do_execute(scope_context) <= self.operand2.do_execute(scope_context)
 
 
 class GreaterOrEqualOperator(ParserNode):
@@ -202,7 +186,7 @@ class GreaterOrEqualOperator(ParserNode):
         self.operand2 = operand2
 
     def do_execute(self, scope_context):
-        return self.operand1.execute(scope_context) >= self.operand2.execute(scope_context)
+        return self.operand1.do_execute(scope_context) >= self.operand2.do_execute(scope_context)
 
 
 class LowerOperator(ParserNode):
@@ -211,7 +195,7 @@ class LowerOperator(ParserNode):
         self.operand2 = operand2
 
     def do_execute(self, scope_context):
-        return self.operand1.execute(scope_context) < self.operand2.execute(scope_context)
+        return self.operand1.do_execute(scope_context) < self.operand2.do_execute(scope_context)
 
 
 class GreaterOperator(ParserNode):
@@ -220,7 +204,7 @@ class GreaterOperator(ParserNode):
         self.operand2 = operand2
 
     def do_execute(self, scope_context):
-        return self.operand1.execute(scope_context) > self.operand2.execute(scope_context)
+        return self.operand1.do_execute(scope_context) > self.operand2.do_execute(scope_context)
 
 
 class NotOperator(ParserNode):
@@ -228,7 +212,7 @@ class NotOperator(ParserNode):
         self.operand = operand
 
     def do_execute(self, scope_context):
-        return not self.operand.execute(scope_context)
+        return not self.operand.do_execute(scope_context)
 
 
 class OrOperator(ParserNode):
@@ -237,7 +221,7 @@ class OrOperator(ParserNode):
         self.operand2 = operand2
 
     def do_execute(self, scope_context):
-        return self.operand1.execute(scope_context) or self.operand2.execute(scope_context)
+        return self.operand1.do_execute(scope_context) or self.operand2.do_execute(scope_context)
 
 
 class AndOperator(ParserNode):
@@ -246,7 +230,7 @@ class AndOperator(ParserNode):
         self.operand2 = operand2
 
     def do_execute(self, scope_context):
-        return self.operand1.execute(scope_context) and self.operand2.execute(scope_context)
+        return self.operand1.do_execute(scope_context) and self.operand2.do_execute(scope_context)
 
 
 class MinusOperator(ParserNode):
@@ -254,7 +238,7 @@ class MinusOperator(ParserNode):
         self.operand = operand
 
     def do_execute(self, scope_context):
-        return -self.operand.execute(scope_context)
+        return -self.operand.do_execute(scope_context)
 
 
 class PlusOperator(ParserNode):
@@ -262,7 +246,7 @@ class PlusOperator(ParserNode):
         self.operand = operand
 
     def do_execute(self, scope_context):
-        return +self.operand.execute(scope_context)
+        return +self.operand.do_execute(scope_context)
 
 
 class InOperator(ParserNode):
@@ -271,7 +255,23 @@ class InOperator(ParserNode):
         self.operand2 = operand2
 
     def do_execute(self, scope_context):
-        return self.operand1.execute(scope_context) in self.operand2.execute(scope_context)
+        return self.operand1.do_execute(scope_context) in self.operand2.do_execute(scope_context)
+
+
+class HTMLCode(ParserNode):
+    def __init__(self, html):
+        self.html = html
+
+    def do_execute(self, scope_context):
+        return self.html
+
+
+class PrintStatement(ParserNode):
+    def __init__(self, expression):
+        self.expression = expression
+
+    def do_execute(self, scope_context):
+        return str(self.expression.execute(scope_context))
 
 
 class IfStatement(ParserNode):

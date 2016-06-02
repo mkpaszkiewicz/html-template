@@ -170,7 +170,11 @@ class Parser:
         return PrintStatement(expression)
 
     def expression(self):
-        return self.or_expression()
+        line, position = self.current_token.get_position()
+        expression = self.or_expression()
+        expression.line = line
+        expression.position = position
+        return expression
 
     def or_expression(self):
         operand1 = self.and_expression()

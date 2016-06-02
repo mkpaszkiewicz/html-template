@@ -2,7 +2,8 @@ __all__ = [
     'ParserError',
     'ParserSyntaxError',
     'ParserSemanticError',
-    'ParserArgumentError'
+    'ParserArgumentError',
+    'UnknownIdentifier'
 ]
 
 
@@ -11,7 +12,10 @@ class ParserError(Exception):
 
     def __init__(self, msg, position=None):
         if position:
-            pos = '{}:{}: '.format(position[0], position[1])
+            if position[1]:
+                pos = '{}:{}: '.format(position[0], position[1])
+            else:
+                pos = '{}: '.format(position[0])
         else:
             pos = ''
         self.message = '{}error: {}'.format(pos, msg)
@@ -32,10 +36,10 @@ class ParserSyntaxError(ParserError):
 
 
 class ParserSemanticError(ParserError):
-    """Raised when dividing by 0"""
+    """Raised when dividing by 0, met key or typ error"""
 
-    def __init__(self, msg):
-        ParserError.__init__(self, msg)
+    def __init__(self, msg, line, position=None):
+        ParserError.__init__(self, msg, (line, position))
 
 
 class ParserArgumentError(ParserError):
@@ -43,3 +47,10 @@ class ParserArgumentError(ParserError):
 
     def __init__(self, msg):
         ParserError.__init__(self, msg)
+
+
+class UnknownIdentifier(Exception):
+    """Raised when cannot find identifier in scope context"""
+
+    def __init__(self, msg):
+        Exception.__init__(self, msg)

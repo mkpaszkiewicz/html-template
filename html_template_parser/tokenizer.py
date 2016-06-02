@@ -25,6 +25,9 @@ class Token:
     def __eq__(self, other):
         return self.id == other.id and self.content == other.content
 
+    def get_position(self):
+        return self.line, self.position
+
 
 class Tokenizer:
     """Class generates tokens based on source_controller input stream."""
